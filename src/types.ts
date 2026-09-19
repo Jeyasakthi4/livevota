@@ -142,5 +142,7 @@ export interface EventTemplate {
   options: string[];
   recommendedMinutes?: number;
   tagline: string;
+  displayName?: string;
+  shortDescription?: string;
 }
 

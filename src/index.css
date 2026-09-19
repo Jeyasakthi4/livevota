@@ -373,6 +373,144 @@ button:disabled,
   animation: conference-horizon-scan 15s ease-in-out infinite;
 }
 
+/* Card Preview Atmospheric Enhancements */
+@keyframes quiz-spotlight-pulse {
+  0%, 100% {
+    opacity: 0.35;
+    transform: scale(0.96);
+  }
+  50% {
+    opacity: 0.65;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes countdown-pulse {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 18px rgba(245, 158, 11, 0.7);
+  }
+}
+
+@keyframes streak-racing-fast {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 80px 80px;
+  }
+}
+
+@keyframes scoreboard-leader-glow {
+  0%, 100% {
+    border-color: rgba(239, 68, 68, 0.4);
+    box-shadow: 0 0 12px rgba(239, 68, 68, 0.2);
+  }
+  50% {
+    border-color: rgba(249, 115, 22, 0.7);
+    box-shadow: 0 0 20px rgba(249, 115, 22, 0.4);
+  }
+}
+
+@keyframes node-aura-expand {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1.3);
+    opacity: 0.9;
+  }
+}
+
+@keyframes bokeh-float-gentle {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.3;
+  }
+  50% {
+    transform: translate(6px, -8px) scale(1.15);
+    opacity: 0.65;
+  }
+}
+
+@keyframes confetti-flutter {
+  0% {
+    transform: translateY(-8px) rotate(0deg) rotateY(0deg);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.85;
+  }
+  80% {
+    opacity: 0.75;
+  }
+  100% {
+    transform: translateY(90px) rotate(220deg) rotateY(180deg);
+    opacity: 0;
+  }
+}
+
+@keyframes oscilloscope-flow {
+  0% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: -80;
+  }
+}
+
+@keyframes stage-beam-sweep-card {
+  0%, 100% {
+    transform: rotate(-10deg) scaleX(0.95);
+    opacity: 0.35;
+  }
+  50% {
+    transform: rotate(10deg) scaleX(1.05);
+    opacity: 0.6;
+  }
+}
+
+.anim-quiz-spotlight {
+  animation: quiz-spotlight-pulse 7s ease-in-out infinite;
+}
+
+.anim-countdown-buzzer {
+  animation: countdown-pulse 1.6s ease-in-out infinite;
+}
+
+.anim-streak-fast {
+  animation: streak-racing-fast 8s linear infinite;
+}
+
+.anim-scoreboard-glow {
+  animation: scoreboard-leader-glow 3s ease-in-out infinite;
+}
+
+.anim-node-pulse {
+  animation: node-aura-expand 4s ease-in-out infinite;
+}
+
+.anim-bokeh-gentle {
+  animation: bokeh-float-gentle 7s ease-in-out infinite;
+}
+
+.anim-confetti-flutter {
+  animation: confetti-flutter 7s linear infinite;
+}
+
+.anim-oscilloscope-flow {
+  stroke-dasharray: 6 3;
+  animation: oscilloscope-flow 8s linear infinite;
+}
+
+.anim-stage-beam-card {
+  transform-origin: top center;
+  animation: stage-beam-sweep-card 11s ease-in-out infinite;
+}
+
 /* Reduced Motion Override */
 @media (prefers-reduced-motion: reduce) {
   .anim-classroom-dust,
@@ -387,7 +525,16 @@ button:disabled,
   .anim-party-confetti,
   .anim-party-bokeh,
   .anim-survey-wave,
-  .anim-conference-horizon {
+  .anim-conference-horizon,
+  .anim-quiz-spotlight,
+  .anim-countdown-buzzer,
+  .anim-streak-fast,
+  .anim-scoreboard-glow,
+  .anim-node-pulse,
+  .anim-bokeh-gentle,
+  .anim-confetti-flutter,
+  .anim-oscilloscope-flow,
+  .anim-stage-beam-card {
     animation: none !important;
     transform: none !important;
   }
