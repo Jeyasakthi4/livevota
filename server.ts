@@ -5,7 +5,6 @@ import { WebSocketServer, WebSocket } from 'ws';
 import Redis from 'ioredis';
 import RedisMock from 'ioredis-mock';
 import { createServer as createViteServer } from 'vite';
-import { exec, spawn } from 'child_process';
 import crypto from 'crypto';
 import {
   initMongoDB,
@@ -160,6 +159,7 @@ interface Poll {
   reactions?: Record<string, number>;
   template_id?: string;
   theme_id?: string;
+  personality?: string;
 }
 
 export interface ActivityEvent {

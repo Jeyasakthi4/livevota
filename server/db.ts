@@ -25,6 +25,9 @@ export interface PollDoc {
   created_at: string;
   expires_at?: string;
   reactions?: Record<string, number>;
+  template_id?: string;
+  theme_id?: string;
+  personality?: string;
 }
 
 export interface UserDoc {
