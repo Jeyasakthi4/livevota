@@ -7,7 +7,7 @@
    - Frontend belongs exclusively in `/src/` (React, components, UI utilities, styles).
    - Backend belongs exclusively in `/server/` (Express routes, Redis engine, MongoDB access, validation, auth, WebSockets).
    - Never mix frontend UI code and backend database/server code in the same file.
-   - `server.ts` is strictly the server runtime entrypoint orchestrating modular components from `/server/`.
+   - `server/index.ts` is the primary backend runtime entrypoint orchestrating all backend modules, with `server.ts` bridging for deployment compatibility.
 
 2. **Validate on the Backend**:
    - Never trust input straight from the client; validate and sanitize all inputs server-side before they touch the database or cache.
