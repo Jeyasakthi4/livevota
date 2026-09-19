@@ -1,4 +1,6 @@
 import express, { Router, Request, Response } from 'express';
+import fs from 'fs';
+import path from 'path';
 import crypto from 'crypto';
 import {
   Poll,
@@ -114,13 +116,36 @@ apiRouter.get('/telemetry/redis', async (_req: Request, res: Response) => {
 
 // ---------------- AUTHENTICATION ROUTES ----------------
 
+function resolveGoogleClientId(): string {
+  if (process.env.GOOGLE_CLIENT_ID) return process.env.GOOGLE_CLIENT_ID.trim();
+  if (process.env.CLIENT_ID) return process.env.CLIENT_ID.trim();
+  try {
+    const configPath = path.resolve(process.cwd(), 'firebase-applet-config.json');
+    if (fs.existsSync(configPath)) {
+      const raw = fs.readFileSync(configPath, 'utf-8');
+      const cfg = JSON.parse(raw);
+      if (cfg.oAuthClientId) return String(cfg.oAuthClientId).trim();
+    }
+  } catch {}
+  return '';
+}
+
 apiRouter.get('/auth/google/url', (req: Request, res: Response) => {
   const clientRedirectUri = req.query.redirect_uri as string;
   const baseUrl = (process.env.APP_URL || req.headers.origin || 'http://localhost:3000').toString().replace(/\/$/, '');
   const redirectUri = clientRedirectUri || `${baseUrl}/auth/callback`;
-  const clientId = process.env.GOOGLE_CLIENT_ID || process.env.CLIENT_ID;
+  const clientId = resolveGoogleClientId();
 
-  if (!clientId) {
+  // Read Firebase config metadata if present
+  let firebaseConfig = null;
+  try {
+    const configPath = path.resolve(process.cwd(), 'firebase-applet-config.json');
+    if (fs.existsSync(configPath)) {
+      firebaseConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+    }
+  } catch {}
+
+  if (!clientId && !firebaseConfig?.apiKey) {
     return res.json({
       configured: false,
       redirectUri,
@@ -131,7 +156,7 @@ apiRouter.get('/auth/google/url', (req: Request, res: Response) => {
 
   const state = Buffer.from(JSON.stringify({ redirectUri })).toString('base64');
   const params = new URLSearchParams({
-    client_id: clientId,
+    client_id: clientId || '',
     redirect_uri: redirectUri,
     response_type: 'code',
     scope: 'openid email profile',
@@ -140,12 +165,13 @@ apiRouter.get('/auth/google/url', (req: Request, res: Response) => {
     state,
   });
 
-  const url = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+  const url = clientId ? `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}` : undefined;
   res.json({
     configured: true,
     url,
     redirectUri,
     clientId,
+    firebaseConfig,
     appUrl: process.env.APP_URL || baseUrl,
   });
 });
@@ -156,14 +182,34 @@ apiRouter.post('/auth/google/verify', async (req: Request, res: Response) => {
   let name = clientName;
 
   if (credential && typeof credential === 'string') {
-    try {
-      const parts = credential.split('.');
-      if (parts.length >= 2) {
-        const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString());
-        if (payload.email) email = payload.email;
-        if (payload.name) name = payload.name;
+    // 1. JWT (Google ID token / Firebase ID token)
+    if (credential.includes('.')) {
+      try {
+        const parts = credential.split('.');
+        if (parts.length >= 2) {
+          const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString());
+          if (payload.email) email = payload.email;
+          if (payload.name) name = payload.name;
+          if (!name && payload.given_name) {
+            name = `${payload.given_name} ${payload.family_name || ''}`.trim();
+          }
+        }
+      } catch {}
+    } else {
+      // 2. OAuth access token (from GIS token client)
+      try {
+        const userInfoRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+          headers: { Authorization: `Bearer ${credential}` },
+        });
+        if (userInfoRes.ok) {
+          const userInfo = await userInfoRes.json();
+          if (userInfo.email) email = userInfo.email;
+          if (userInfo.name) name = userInfo.name;
+        }
+      } catch (err) {
+        console.warn('[Google UserInfo Fetch Warning]', err);
       }
-    } catch {}
+    }
   }
 
   if (!email || typeof email !== 'string') {

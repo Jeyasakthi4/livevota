@@ -613,6 +613,7 @@ export const CreatePollModal: React.FC<CreatePollModalProps> = ({
                   reducedMotion={false}
                   interactive={false}
                   theme={previewTheme}
+                  variant={previewMode === 'stage' ? 'presentation' : 'standard'}
                 />
               </div>
 

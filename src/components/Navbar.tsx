@@ -19,6 +19,7 @@ interface NavbarProps {
   onToggleTheme: () => void;
   onOpenCreate: () => void;
   onOpenAuth: () => void;
+  onOpenRegister?: () => void;
   onLogout: () => void;
   onOpenRedisInspector: () => void;
   onJoinCode: (code: string) => void;
@@ -31,6 +32,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   user,
   onOpenCreate,
   onOpenAuth,
+  onOpenRegister,
   onLogout,
   onOpenRedisInspector,
   onJoinCode,
@@ -214,17 +216,32 @@ export const Navbar: React.FC<NavbarProps> = ({
               </button>
             </div>
           ) : (
-            <button
-              onClick={() => {
-                sounds.playSelect();
-                onOpenAuth();
-              }}
-              className="flex items-center gap-1 rounded-lg border border-white/[0.08] bg-white/[0.03] px-2.5 py-1.5 text-xs font-medium text-zinc-300 hover:text-white transition cursor-pointer"
-              id="nav-login-btn"
-            >
-              <KeyRound className="h-3 w-3 text-cyan-400" />
-              <span>Sign In</span>
-            </button>
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => {
+                  sounds.playSelect();
+                  onOpenAuth();
+                }}
+                className="flex items-center gap-1 rounded-lg border border-white/[0.08] bg-white/[0.03] px-2.5 py-1.5 text-xs font-medium text-zinc-300 hover:text-white transition cursor-pointer"
+                id="nav-login-btn"
+              >
+                <KeyRound className="h-3 w-3 text-cyan-400" />
+                <span>Sign In</span>
+              </button>
+
+              {onOpenRegister && (
+                <button
+                  onClick={() => {
+                    sounds.playSelect();
+                    onOpenRegister();
+                  }}
+                  className="hidden sm:inline-flex items-center gap-1 rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-2.5 py-1.5 text-xs font-semibold text-cyan-300 hover:bg-cyan-500/20 hover:text-white transition cursor-pointer"
+                  id="nav-signup-btn"
+                >
+                  <span>Sign Up</span>
+                </button>
+              )}
+            </div>
           )}
         </div>
       </div>

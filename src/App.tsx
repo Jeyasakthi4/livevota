@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { Poll, User, EventTemplate, EventPersonalityType } from './types';
 import { api, getStoredUser, clearAuthSession } from './services/api';
+import { signOutFirebase } from './services/firebaseAuth';
 import { Navbar } from './components/Navbar';
 import { LandingHero } from './components/LandingHero';
 import { EventTemplatesSection } from './components/EventTemplatesSection';
@@ -77,6 +78,7 @@ export const App: React.FC = () => {
     title?: string;
     subtitle?: string;
     notice?: string;
+    initialMode?: 'login' | 'register';
   } | undefined>(undefined);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [notification, setNotification] = useState<{ message: string; type: 'error' | 'success' } | null>(null);
@@ -245,7 +247,7 @@ export const App: React.FC = () => {
     }
   };
 
-  const handleOpenAuth = (context?: { title?: string; subtitle?: string; notice?: string }) => {
+  const handleOpenAuth = (context?: { title?: string; subtitle?: string; notice?: string; initialMode?: 'login' | 'register' }) => {
     sounds.playSelect();
     setAuthContext(context);
     setIsAuthOpen(true);
@@ -269,6 +271,7 @@ export const App: React.FC = () => {
   const handleLogout = () => {
     sounds.playSelect();
     clearAuthSession();
+    signOutFirebase();
     setUser(null);
     setIsCreateOpen(false);
     setHasVotedActive(false);
@@ -301,7 +304,8 @@ export const App: React.FC = () => {
         theme={theme}
         onToggleTheme={toggleTheme}
         onOpenCreate={handleOpenCreatePoll}
-        onOpenAuth={() => handleOpenAuth()}
+        onOpenAuth={() => handleOpenAuth({ initialMode: 'login' })}
+        onOpenRegister={() => handleOpenAuth({ initialMode: 'register' })}
         onLogout={handleLogout}
         onOpenRedisInspector={() => {
           sounds.playSelect();
@@ -604,6 +608,7 @@ export const App: React.FC = () => {
           setAuthContext(undefined);
         }}
         onAuthSuccess={handleAuthSuccess}
+        initialMode={authContext?.initialMode || 'login'}
         contextTitle={authContext?.title}
         contextSubtitle={authContext?.subtitle}
         contextNotice={authContext?.notice}

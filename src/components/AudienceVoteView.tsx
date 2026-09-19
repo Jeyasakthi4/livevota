@@ -353,10 +353,10 @@ export const AudienceVoteView: React.FC<AudienceVoteViewProps> = ({
       {/* Main Ballot Card Styled by Event Theme with Atmospheric Glassmorphism */}
       <div
         style={{
-          backgroundColor: 'rgba(10, 14, 22, 0.78)',
+          backgroundColor: 'rgba(10, 14, 22, 0.85)',
           borderColor: theme.accentColors?.border || 'rgba(255,255,255,0.12)',
         }}
-        className="relative rounded-2xl border p-6 sm:p-8 space-y-6 shadow-2xl backdrop-blur-xl transition-all duration-300 overflow-hidden"
+        className="relative rounded-2xl border p-5 sm:p-7 space-y-6 shadow-2xl backdrop-blur-xl transition-all duration-300 overflow-hidden"
       >
         {/* Subtle interior atmospheric glow */}
         <div
@@ -374,13 +374,13 @@ export const AudienceVoteView: React.FC<AudienceVoteViewProps> = ({
               color: theme.accentColors?.badgeText,
             }}
           >
-            <div className="flex items-center gap-2 min-w-0">
+            <div className="flex items-center gap-2.5 min-w-0">
               <eventWidget.icon
                 className="h-4 w-4 shrink-0"
                 style={{ color: theme.accentColors?.primary }}
               />
               <div className="min-w-0">
-                <div className="font-bold tracking-wide uppercase">{eventWidget.title}</div>
+                <div className="font-bold tracking-wide uppercase leading-tight">{eventWidget.title}</div>
                 <div className="text-[11px] opacity-80 truncate">{eventWidget.description}</div>
               </div>
             </div>
@@ -398,11 +398,15 @@ export const AudienceVoteView: React.FC<AudienceVoteViewProps> = ({
         )}
 
         {/* Title & Description with Event-Themed Typography */}
-        <div className="space-y-2">
+        <div className="space-y-2 border-b border-white/[0.06] pb-4">
+          <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest text-zinc-400">
+            <span className="h-1.5 w-1.5 rounded-full bg-cyan-400" />
+            <span>Active Question</span>
+          </div>
           <h1
             className={`${
               theme.typography?.titleClass || 'text-2xl sm:text-3xl font-extrabold tracking-tight'
-            } text-white leading-snug`}
+            } text-white leading-snug break-words`}
           >
             {currentPoll.title}
           </h1>
@@ -410,7 +414,7 @@ export const AudienceVoteView: React.FC<AudienceVoteViewProps> = ({
             <p
               className={`${
                 theme.typography?.descriptionClass || 'text-sm text-zinc-400'
-              } leading-relaxed`}
+              } leading-relaxed break-words`}
             >
               {currentPoll.description}
             </p>
@@ -419,7 +423,7 @@ export const AudienceVoteView: React.FC<AudienceVoteViewProps> = ({
 
         {/* User Status Strip */}
         {user && !hasVoted && !currentPoll.is_closed && (
-          <div className="flex items-center justify-between rounded-xl border border-white/[0.08] bg-white/[0.02] px-3.5 py-2 text-xs text-zinc-400 font-mono">
+          <div className="flex items-center justify-between rounded-xl border border-white/[0.08] bg-white/[0.02] px-3.5 py-2.5 text-xs text-zinc-400 font-mono">
             <div className="flex items-center gap-2">
               <UserCheck
                 className="h-3.5 w-3.5"
@@ -430,7 +434,7 @@ export const AudienceVoteView: React.FC<AudienceVoteViewProps> = ({
               </span>
             </div>
             <span
-              className="text-[10px] font-semibold"
+              className="text-[10px] font-semibold tracking-wider px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20"
               style={{ color: theme.accentColors?.primary || '#34d399' }}
             >
               VERIFIED
@@ -449,18 +453,18 @@ export const AudienceVoteView: React.FC<AudienceVoteViewProps> = ({
         {/* Post-Vote Verified Receipt & Live Real-Time Results Notification */}
         {hasVoted && (
           <div
-            className="rounded-xl border p-4 space-y-2 text-xs shadow-inner"
+            className="rounded-xl border p-4 space-y-2.5 text-xs shadow-inner"
             style={{
               backgroundColor: theme.accentColors?.badgeBg,
               borderColor: theme.accentColors?.badgeBorder,
             }}
           >
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
               <div
                 className="flex items-center gap-2 font-semibold"
                 style={{ color: theme.accentColors?.primary || '#34d399' }}
               >
-                <CheckCircle2 className="h-4 w-4" />
+                <CheckCircle2 className="h-4 w-4 shrink-0" />
                 <span>Pulse Recorded · Live Zero-Refresh Results</span>
               </div>
               {receiptHash && (
@@ -481,7 +485,7 @@ export const AudienceVoteView: React.FC<AudienceVoteViewProps> = ({
                 You selected: <strong className="text-white font-bold">{votedOptionName}</strong>
               </p>
             )}
-            <p className="text-[11px] text-zinc-400">
+            <p className="text-[11px] text-zinc-400 leading-normal">
               Option bars below update dynamically in real time without refreshing as attendees vote.
             </p>
           </div>
@@ -524,9 +528,9 @@ export const AudienceVoteView: React.FC<AudienceVoteViewProps> = ({
                     ? `0 0 20px ${paletteEntry.accent}30`
                     : 'none',
                 }}
-                className={`w-full min-h-[56px] relative flex items-center justify-between rounded-xl border p-4 text-left transition-all duration-200 ease-out cursor-pointer select-none overflow-hidden ${
+                className={`w-full min-h-[56px] relative flex items-center justify-between gap-3 rounded-xl border px-4 py-3.5 text-left transition-all duration-200 ease-out cursor-pointer select-none overflow-hidden ${
                   isVotingDisabled && !hasVoted ? 'opacity-40 cursor-not-allowed' : ''
-                } ${!hasVoted ? 'active:scale-[0.975] hover:border-white/[0.25] hover:scale-[1.006]' : ''}`}
+                } ${!hasVoted ? 'active:scale-[0.985] hover:border-white/[0.25] hover:bg-white/[0.04]' : ''}`}
               >
                 {/* Truly Real-Time Dynamic Progress Fill when voted */}
                 {hasVoted && (
@@ -540,14 +544,15 @@ export const AudienceVoteView: React.FC<AudienceVoteViewProps> = ({
                   />
                 )}
 
-                <div className="flex items-center gap-3 min-w-0 z-10 relative">
+                {/* Left: Option Letter + Text Label */}
+                <div className="flex items-center gap-3 min-w-0 z-10 relative flex-1">
                   {/* Option Letter Badge with Event Themed Color */}
                   <span
-                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md font-mono text-xs font-bold transition shadow-sm"
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg font-mono text-xs font-bold transition shadow-sm border"
                     style={{
                       backgroundColor: isSelected ? paletteEntry.accent : 'rgba(255,255,255,0.06)',
                       color: isSelected ? '#000000' : '#d4d4d8',
-                      borderColor: paletteEntry.accent,
+                      borderColor: isSelected ? paletteEntry.accent : 'rgba(255,255,255,0.1)',
                     }}
                   >
                     {letter}
@@ -555,17 +560,17 @@ export const AudienceVoteView: React.FC<AudienceVoteViewProps> = ({
                   <span
                     className={`${
                       theme.typography?.labelClass || 'text-sm sm:text-base font-semibold'
-                    } text-zinc-100 truncate`}
+                    } text-zinc-100 break-words leading-snug flex-1`}
                   >
                     {opt.text}
                   </span>
                 </div>
 
                 {/* Right Side: Radio Check Ring OR Live Dynamic Percent Bar */}
-                <div className="z-10 relative shrink-0">
+                <div className="z-10 relative shrink-0 flex items-center">
                   {hasVoted ? (
                     <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs text-zinc-400">
+                      <span className="font-mono text-xs text-zinc-400 hidden sm:inline">
                         {opt.votes} {opt.votes === 1 ? 'vote' : 'votes'}
                       </span>
                       <span

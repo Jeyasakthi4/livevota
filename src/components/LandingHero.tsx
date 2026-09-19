@@ -47,7 +47,7 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
         {/* Core Statement: ASK. VOTE. WATCH THE ROOM CHANGE. */}
         <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-white leading-[1.05]">
           ASK. VOTE.{' '}
-          <span className="bg-gradient-to-r from-zinc-100 via-zinc-300 to-zinc-400 bg-clip-text text-transparent">
+          <span className="text-zinc-300">
             WATCH THE ROOM CHANGE.
           </span>
         </h1>

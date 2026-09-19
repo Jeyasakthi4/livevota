@@ -27,6 +27,7 @@ interface PulseFieldProps {
   reducedMotion?: boolean;
   accentMode?: 'cyan' | 'violet' | 'dynamic';
   theme?: PulseTheme;
+  variant?: 'standard' | 'presentation';
 }
 
 const OPTION_KEYS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
@@ -54,7 +55,10 @@ export const PulseField: React.FC<PulseFieldProps> = ({
   interactive = false,
   reducedMotion = false,
   theme = THEME_DEFAULT_ECLIPSE,
+  variant = 'standard',
 }) => {
+  const isPresentation = variant === 'presentation';
+
   const maxVotes = useMemo(() => {
     return Math.max(...options.map((o) => o.votes), 0);
   }, [options]);
@@ -70,18 +74,34 @@ export const PulseField: React.FC<PulseFieldProps> = ({
     return ranks;
   }, [options]);
 
+  // Adaptive Grid Configuration for Single-Page, Zero-Scroll Visibility
+  const gridClasses = useMemo(() => {
+    if (isPresentation) {
+      if (options.length <= 2) return 'grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4';
+      if (options.length === 3) return 'grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3.5';
+      if (options.length === 4) return 'grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3';
+      if (options.length <= 6) return 'grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3';
+      return 'grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5';
+    }
+    return 'grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-2';
+  }, [isPresentation, options.length]);
+
   const NodeIcon = THEME_ICONS[theme.visualDetails?.primaryIcon] || Zap;
 
   return (
     <div
       style={theme.cssVariables as React.CSSProperties}
-      className={`relative w-full overflow-hidden ${theme.surface?.cardRounded || 'rounded-2xl'} border ${theme.tailwindClasses.containerBorder} ${theme.tailwindClasses.gridBg} ${theme.tailwindClasses.containerGlow} p-5 sm:p-8 transition-all duration-500`}
+      className={`relative w-full overflow-hidden ${theme.surface?.cardRounded || 'rounded-2xl'} border ${theme.tailwindClasses.containerBorder} ${theme.tailwindClasses.gridBg} ${theme.tailwindClasses.containerGlow} ${
+        isPresentation ? 'p-3 sm:p-4 lg:p-5' : 'p-5 sm:p-8'
+      } transition-all duration-500`}
     >
       {/* Themed Event Architectural Backdrop */}
       <ThemedEventBackground personality={theme.personality} theme={theme} variant="inset" opacity={0.35} />
 
       {/* Top subtle harmonic line connecting the nodes */}
-      <div className="relative mb-6 flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.06] pb-3 text-[11px] font-mono uppercase tracking-wider text-zinc-500">
+      <div className={`relative flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.06] ${
+        isPresentation ? 'mb-2.5 pb-2 text-[10px]' : 'mb-6 pb-3 text-[11px]'
+      } font-mono uppercase tracking-wider text-zinc-500`}>
         <div className="flex items-center gap-2 min-w-0">
           <span className="relative flex h-2 w-2 shrink-0">
             <span
@@ -138,7 +158,7 @@ export const PulseField: React.FC<PulseFieldProps> = ({
       </div>
 
       {/* Dynamic Node Field Grid */}
-      <div className="relative z-10 grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-2">
+      <div className={`relative z-10 ${gridClasses}`}>
         {options.map((opt, index) => {
           const isLeading = maxVotes > 0 && opt.votes === maxVotes;
           const isPulsing = pulsingOptionId === opt.id;
@@ -150,7 +170,8 @@ export const PulseField: React.FC<PulseFieldProps> = ({
           // Dynamic scale: range between 1.0 (0%) and theme.pulseScalePeak for organic visual breathing
           const dynamicScale = reducedMotion ? 1 : 1 + (opt.percentage / 100) * (theme.animation.pulseScalePeak - 1);
           // Core node size indicator: respects theme.nodeBaseSize and theme.nodeGrowthFactor
-          const nodeCoreDiameter = theme.nodeBaseSize + Math.round((opt.percentage / 100) * theme.nodeGrowthFactor);
+          const rawDiameter = theme.nodeBaseSize + Math.round((opt.percentage / 100) * theme.nodeGrowthFactor);
+          const nodeCoreDiameter = isPresentation ? Math.min(rawDiameter, 32) : rawDiameter;
 
           return (
             <motion.div
@@ -162,7 +183,9 @@ export const PulseField: React.FC<PulseFieldProps> = ({
               }}
               transition={{ duration: theme.animation.pulseFrequencySeconds, ease: 'easeOut' }}
               onClick={() => interactive && onSelectOption?.(opt.id)}
-              className={`group relative flex flex-col justify-between ${theme.surface?.cardRounded || 'rounded-xl'} border p-4 sm:p-5 transition-all duration-300 ease-out ${
+              className={`group relative flex flex-col justify-between ${theme.surface?.cardRounded || 'rounded-xl'} border ${
+                isPresentation ? 'p-2.5 sm:p-3.5' : 'p-4 sm:p-5'
+              } transition-all duration-300 ease-out ${
                 interactive ? 'cursor-pointer select-none active:scale-[0.975] hover:scale-[1.01]' : ''
               } ${
                 isSelected
@@ -187,11 +210,11 @@ export const PulseField: React.FC<PulseFieldProps> = ({
               )}
 
               {/* Node Header */}
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-2.5 min-w-0">
+              <div className="flex items-start justify-between gap-2.5">
+                <div className="flex items-center gap-2 min-w-0 flex-1">
                   {/* Letter or Rank Tag */}
                   <div
-                    className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md font-mono text-xs font-semibold transition-colors ${
+                    className={`flex ${isPresentation ? 'h-5 w-5 text-[10px]' : 'h-6 w-6 text-xs'} shrink-0 items-center justify-center rounded-md font-mono font-semibold transition-colors ${
                       isSelected
                         ? 'bg-white text-black font-bold'
                         : isLeading && totalVotes > 0
@@ -212,7 +235,9 @@ export const PulseField: React.FC<PulseFieldProps> = ({
                   </div>
 
                   {/* Option Title */}
-                  <h4 className={`${theme.typography?.labelClass || 'font-sans text-sm font-semibold text-zinc-100'} leading-snug truncate`}>
+                  <h4 className={`${theme.typography?.labelClass || 'font-sans font-semibold text-zinc-100'} ${
+                    isPresentation ? 'text-xs sm:text-sm' : 'text-sm'
+                  } leading-tight truncate flex-1`}>
                     {opt.text}
                   </h4>
                 </div>
@@ -220,23 +245,23 @@ export const PulseField: React.FC<PulseFieldProps> = ({
                 {/* Leading / Podium Badge */}
                 {isLeading && totalVotes > 0 && (
                   <div
-                    className="shrink-0 flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-mono font-medium"
+                    className="shrink-0 flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[9px] font-mono font-medium"
                     style={{
                       backgroundColor: theme.leadPalette.badgeBg,
                       borderColor: theme.leadPalette.badgeBorder,
                       color: theme.leadPalette.text,
                     }}
                   >
-                    <Trophy className="h-3 w-3" style={{ color: theme.leadPalette.text }} />
+                    <Trophy className="h-2.5 w-2.5" style={{ color: theme.leadPalette.text }} />
                     <span>{theme.personality === 'competition' ? 'PODIUM #1' : 'LEAD'}</span>
                   </div>
                 )}
               </div>
 
               {/* Central Node Footprint & Dynamic Metric */}
-              <div className="my-4 flex items-center justify-between gap-4">
+              <div className={`${isPresentation ? 'my-1.5 sm:my-2' : 'my-4'} flex items-center justify-between gap-3`}>
                 {/* Node Orb: Dynamic size represents vote percentage */}
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2.5">
                   <div className="relative flex items-center justify-center">
                     {/* Concentric aura ring */}
                     <motion.div
@@ -247,8 +272,8 @@ export const PulseField: React.FC<PulseFieldProps> = ({
                       }
                       transition={{ duration: theme.animation.pulseFrequencySeconds }}
                       style={{
-                        width: nodeCoreDiameter + 12,
-                        height: nodeCoreDiameter + 12,
+                        width: nodeCoreDiameter + (isPresentation ? 8 : 12),
+                        height: nodeCoreDiameter + (isPresentation ? 8 : 12),
                         borderColor: palette.border,
                         backgroundColor: palette.bg,
                       }}
@@ -266,17 +291,17 @@ export const PulseField: React.FC<PulseFieldProps> = ({
                       className="absolute flex items-center justify-center rounded-full border backdrop-blur-xs transition-all duration-500 shadow-inner"
                     >
                       <NodeIcon
-                        className="h-3.5 w-3.5 transition-transform group-hover:scale-110"
+                        className={`${isPresentation ? 'h-3 w-3' : 'h-3.5 w-3.5'} transition-transform group-hover:scale-110`}
                         style={{ color: palette.text }}
                       />
                     </div>
                   </div>
 
                   <div className="flex flex-col">
-                    <span className="font-mono text-xs text-zinc-400">
+                    <span className="font-mono text-[11px] sm:text-xs text-zinc-400">
                       {opt.votes} {opt.votes === 1 ? 'pulse' : 'pulses'}
                     </span>
-                    <span className="text-[10px] text-zinc-400 font-mono">
+                    <span className="text-[9px] sm:text-[10px] text-zinc-400 font-mono">
                       {totalVotes > 0 ? `${((opt.votes / totalVotes) * 100).toFixed(0)}% share` : 'awaiting votes'}
                     </span>
                   </div>
@@ -288,7 +313,9 @@ export const PulseField: React.FC<PulseFieldProps> = ({
                     key={opt.percentage.toFixed(1)}
                     initial={{ opacity: 0.7, y: -2 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className={`${theme.typography?.metricClass || 'font-mono text-2xl sm:text-3xl font-bold tracking-tight text-white'}`}
+                    className={`${theme.typography?.metricClass || 'font-mono font-bold tracking-tight text-white'} ${
+                      isPresentation ? 'text-lg sm:text-2xl' : 'text-2xl sm:text-3xl'
+                    }`}
                   >
                     {opt.percentage.toFixed(1)}%
                   </motion.span>

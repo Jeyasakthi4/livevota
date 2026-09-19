@@ -1,6 +1,7 @@
 import express from 'express';
 import http from 'http';
 import path from 'path';
+import fs from 'fs';
 import crypto from 'crypto';
 import { createServer as createViteServer } from 'vite';
 
@@ -148,7 +149,16 @@ app.get(['/auth/callback', '/auth/callback/'], async (req, res) => {
   let userName = '';
 
   try {
-    const clientId = process.env.GOOGLE_CLIENT_ID || process.env.CLIENT_ID;
+    let fallbackClientId = '';
+    try {
+      const configPath = path.resolve(process.cwd(), 'firebase-applet-config.json');
+      if (fs.existsSync(configPath)) {
+        const cfg = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+        if (cfg.oAuthClientId) fallbackClientId = cfg.oAuthClientId;
+      }
+    } catch {}
+
+    const clientId = process.env.GOOGLE_CLIENT_ID || process.env.CLIENT_ID || fallbackClientId;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET || process.env.CLIENT_SECRET;
     const baseUrl = (process.env.APP_URL || `${req.protocol}://${req.get('host')}`).replace(/\/$/, '');
     let redirectUri = `${baseUrl}/auth/callback`;
