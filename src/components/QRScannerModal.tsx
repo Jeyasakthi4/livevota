@@ -301,7 +301,7 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({
           </div>
 
           <p className="text-[11px] text-center text-slate-400">
-            Works with any PulsePoll QR code displayed on presentations, slides, or shared links.
+            Works with any LiveVota QR code displayed on presentations, slides, or shared links.
           </p>
         </div>
       </div>

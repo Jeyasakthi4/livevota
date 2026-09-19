@@ -17,6 +17,7 @@ import { LiveReactionsOverlay } from './LiveReactionsOverlay';
 import { QRCodeDisplay } from './QRCodeDisplay';
 import { sounds } from '../utils/soundEffects';
 import { PulseTheme, getThemeForPoll } from '../utils/themeManager';
+import { ThemedEventBackground } from './ThemedEventBackground';
 
 interface PresentationModeViewProps {
   initialPoll: Poll;
@@ -154,10 +155,12 @@ export const PresentationModeView: React.FC<PresentationModeViewProps> = ({
       style={activeTheme.cssVariables as React.CSSProperties}
       className={`fixed inset-0 z-50 flex flex-col ${activeTheme.presentation?.stageBackdrop || 'bg-[#06070A]'} text-white overflow-hidden select-none transition-colors duration-500`}
     >
-      {/* Dynamic presentation ambient gradient lighting */}
-      <div
-        className="pointer-events-none absolute inset-0 opacity-60 transition-opacity duration-700"
-        style={{ background: activeTheme.atmosphere?.previewGradient }}
+      {/* Impressive Fullscreen Architectural Event Background */}
+      <ThemedEventBackground
+        personality={activeTheme.personality}
+        theme={activeTheme}
+        variant="fullscreen"
+        opacity={1}
       />
 
       {/* Floating Reaction Particles */}

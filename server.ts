@@ -240,9 +240,9 @@ const initialDemoPoll: Poll = {
   id: demoPollId,
   code: 'GO2026',
   title: 'What is your preferred backend runtime for real-time systems?',
-  description: 'PulsePoll benchmark poll evaluating high-concurrency event-driven architectures with Go, Gin, Redis, and MongoDB.',
+  description: 'LiveVota benchmark poll evaluating high-concurrency event-driven architectures with Go, Gin, Redis, and MongoDB.',
   creator_id: 'usr_internship_demo',
-  creator_name: 'PulsePoll Staff',
+  creator_name: 'LiveVota Staff',
   is_closed: false,
   allow_multiple: false,
   is_anonymous: false,
@@ -277,18 +277,22 @@ setTimeout(async () => {
 const demoUser: User = {
   id: 'usr_internship_demo',
   username: 'Alex Chen',
-  email: 'alex.chen@pulsepoll.io',
+  email: 'alex.chen@livevota.io',
   password_hash: crypto.createHash('sha256').update('salt_pulsepoll_2026_password123').digest('hex'),
 };
 memoryUsers.set(demoUser.email, demoUser);
+// Backwards-compatible alias
+memoryUsers.set('alex.chen@pulsepoll.io', { ...demoUser, email: 'alex.chen@pulsepoll.io' });
 
 const demoVoter: User = {
   id: 'usr_voter_demo',
   username: 'Jordan Lee',
-  email: 'jordan.lee@pulsepoll.io',
+  email: 'jordan.lee@livevota.io',
   password_hash: crypto.createHash('sha256').update('salt_pulsepoll_2026_password123').digest('hex'),
 };
 memoryUsers.set(demoVoter.email, demoVoter);
+// Backwards-compatible alias
+memoryUsers.set('jordan.lee@pulsepoll.io', { ...demoVoter, email: 'jordan.lee@pulsepoll.io' });
 
 // Initialize MongoDB Connection & Synchronize Initial Dataset
 initMongoDB().then(async (online) => {
@@ -414,7 +418,7 @@ app.get('/api/health', async (_req, res) => {
   const mongoStatus = await getMongoStatus();
   res.json({
     status: 'ok',
-    service: 'pulsepoll-fullstack',
+    service: 'livevota-fullstack',
     backend: 'Go Gin + Node supervisor',
     database: `MongoDB (${mongoStatus.status})`,
     mongodb: mongoStatus,
@@ -498,7 +502,7 @@ app.get(['/auth/callback', '/auth/callback/'], async (req, res) => {
           <div style="text-align:center;padding:24px;background:#111827;border:1px solid #ef4444;border-radius:16px;max-width:420px;">
             <h3 style="color:#ef4444;margin-bottom:8px;">Google Authentication Cancelled or Failed</h3>
             <p style="color:#9ca3af;font-size:13px;margin-bottom:12px;">${errorMsg}</p>
-            <p style="color:#6b7280;font-size:11px;">You can close this window or use the instant Google Account option in PulsePoll.</p>
+            <p style="color:#6b7280;font-size:11px;">You can close this window or use the instant Google Account option in LiveVota.</p>
             <script>
               try {
                 if (window.opener) {
@@ -625,7 +629,7 @@ app.get(['/auth/callback', '/auth/callback/'], async (req, res) => {
       <body style="background:#090d16;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;">
         <div style="text-align:center;padding:24px;background:#111827;border:1px solid #10b981;border-radius:16px;max-width:400px;">
           <h3 style="color:#10b981;margin-bottom:8px;">Authentication Successful</h3>
-          <p style="color:#9ca3af;font-size:13px;">Returning to PulsePoll...</p>
+          <p style="color:#9ca3af;font-size:13px;">Returning to LiveVota...</p>
           <script>
             try {
               if (window.opener) {
@@ -1415,7 +1419,7 @@ async function start() {
   }
 
   server.listen(PORT, '0.0.0.0', () => {
-    console.log(`[PulsePoll Server] Running on http://0.0.0.0:${PORT}`);
+    console.log(`[LiveVota Server] Running on http://0.0.0.0:${PORT}`);
   });
 }
 

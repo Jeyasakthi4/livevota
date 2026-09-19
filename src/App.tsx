@@ -8,7 +8,7 @@ import {
   CheckCircle2,
   Tv,
 } from 'lucide-react';
-import { Poll, User, EventTemplate } from './types';
+import { Poll, User, EventTemplate, EventPersonalityType } from './types';
 import { api, getStoredUser, clearAuthSession } from './services/api';
 import { Navbar } from './components/Navbar';
 import { LandingHero } from './components/LandingHero';
@@ -21,6 +21,8 @@ import { RedisInspectorModal } from './components/RedisInspectorModal';
 import { AuthModal } from './components/AuthModal';
 import { QRScannerModal } from './components/QRScannerModal';
 import { sounds } from './utils/soundEffects';
+import { getThemeForPoll } from './utils/themeManager';
+import { ThemedEventBackground } from './components/ThemedEventBackground';
 
 export const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(getStoredUser());
@@ -28,6 +30,27 @@ export const App: React.FC = () => {
   const [activePoll, setActivePoll] = useState<Poll | null>(null);
   const [hasVotedActive, setHasVotedActive] = useState<boolean>(false);
   const [currentView, setCurrentView] = useState<'dashboard' | 'vote' | 'results'>('dashboard');
+
+  // Event atmosphere state - persists across sessions and drives page background
+  const [activeAtmosphere, setActiveAtmosphere] = useState<EventPersonalityType>(() => {
+    try {
+      return (
+        (localStorage.getItem('livevota_active_atmosphere') as EventPersonalityType) ||
+        'conference'
+      );
+    } catch {
+      return 'conference';
+    }
+  });
+
+  const handleSelectAtmosphere = (personality: EventPersonalityType) => {
+    setActiveAtmosphere(personality);
+    try {
+      localStorage.setItem('livevota_active_atmosphere', personality);
+    } catch {
+      // ignore
+    }
+  };
 
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
 
@@ -133,6 +156,9 @@ export const App: React.FC = () => {
     try {
       const res = await api.getPoll(pollId);
       setActivePoll(res.poll);
+      if (res.poll.personality) {
+        handleSelectAtmosphere(res.poll.personality as EventPersonalityType);
+      }
       setHasVotedActive(res.has_voted);
       setCurrentView('vote');
     } catch (e: any) {
@@ -145,6 +171,9 @@ export const App: React.FC = () => {
     try {
       const res = await api.getPoll(pollId);
       setActivePoll(res.poll);
+      if (res.poll.personality) {
+        handleSelectAtmosphere(res.poll.personality as EventPersonalityType);
+      }
       setHasVotedActive(res.has_voted);
       setCurrentView('results');
     } catch (e: any) {
@@ -161,6 +190,9 @@ export const App: React.FC = () => {
   const handlePollCreated = (newPoll: Poll) => {
     setPolls((prev) => [newPoll, ...prev]);
     setActivePoll(newPoll);
+    if (newPoll.personality) {
+      handleSelectAtmosphere(newPoll.personality as EventPersonalityType);
+    }
     handleOpenShare(newPoll);
   };
 
@@ -178,6 +210,7 @@ export const App: React.FC = () => {
 
   const handleSelectTemplate = (template: EventTemplate) => {
     sounds.playSelect();
+    handleSelectAtmosphere(template.personality);
     setSelectedTemplate(template);
     if (!user) {
       setPendingAction('create_poll');
@@ -234,8 +267,26 @@ export const App: React.FC = () => {
     showNotification('Signed out successfully', 'success');
   };
 
+  const activePollTheme = activePoll ? getThemeForPoll(activePoll) : null;
+
   return (
-    <div className="min-h-screen bg-[#07080B] text-zinc-100 selection:bg-cyan-500 selection:text-black flex flex-col font-sans">
+    <div className="min-h-screen bg-[#07080B] text-zinc-100 selection:bg-cyan-500 selection:text-black flex flex-col font-sans relative">
+      {/* Dynamic Themed Event Background - changes page atmosphere instantly */}
+      <ThemedEventBackground
+        personality={
+          activePoll && (currentView === 'vote' || currentView === 'results')
+            ? activePoll.personality || activeAtmosphere
+            : activeAtmosphere
+        }
+        theme={
+          activePoll && (currentView === 'vote' || currentView === 'results')
+            ? activePollTheme || undefined
+            : undefined
+        }
+        variant="fullscreen"
+        opacity={1}
+      />
+
       {/* Global Minimalist Navigation */}
       <Navbar
         user={user}
@@ -310,16 +361,20 @@ export const App: React.FC = () => {
               }}
               onExplorePolls={() => {
                 const el = document.getElementById('active-rooms-section');
-                if (el) el.scrollIntoView({ behavior: 'smooth' });
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
               }}
               onExploreTemplates={handleExploreTemplates}
             />
 
             {/* Curated Event Templates Section */}
-            <EventTemplatesSection onSelectTemplate={handleSelectTemplate} />
+            <EventTemplatesSection
+              onSelectTemplate={handleSelectTemplate}
+              activeAtmosphere={activeAtmosphere}
+              onSelectAtmosphere={handleSelectAtmosphere}
+            />
 
             {/* Active Live Rooms Section */}
-            <div id="active-rooms-section" className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 pb-20 space-y-6">
+            <div id="active-rooms-section" className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 pb-20 space-y-6 scroll-mt-24">
               <div className="flex items-center justify-between border-b border-white/[0.06] pb-4">
                 <div className="flex items-center gap-2">
                   <span className="h-2 w-2 rounded-full bg-cyan-400 animate-pulse" />
@@ -333,87 +388,125 @@ export const App: React.FC = () => {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                {polls.map((p) => (
-                  <div
-                    key={p.id}
-                    className="flex flex-col justify-between rounded-2xl border border-white/[0.07] bg-[#0A0D14] p-6 hover:border-white/[0.14] transition duration-200"
-                  >
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <span className="font-mono text-xs font-bold text-cyan-400 bg-cyan-950/40 border border-cyan-500/20 px-2.5 py-0.5 rounded-md">
-                          {p.code}
-                        </span>
-                        <div className="flex items-center gap-2">
-                          {(p.personality || p.template_id) && (
-                            <span className="font-mono text-[9px] text-zinc-400 uppercase bg-white/[0.04] border border-white/[0.06] px-1.5 py-0.5 rounded">
-                              {p.personality || p.template_id?.split('-')[0]}
-                            </span>
-                          )}
-                          <span className="flex items-center gap-1 text-xs font-mono text-zinc-400">
-                            <Users className="h-3 w-3" />
-                            <span>{p.total_votes}</span>
+                {polls.map((p) => {
+                  const pollTheme = getThemeForPoll(p);
+                  return (
+                    <div
+                      key={p.id}
+                      style={{
+                        borderColor: pollTheme.accentColors?.border || 'rgba(255,255,255,0.07)',
+                        backgroundColor: pollTheme.atmosphere?.previewBg || '#0A0D14',
+                      }}
+                      className="group flex flex-col justify-between rounded-2xl border p-6 hover:border-white/[0.2] transition-all duration-200 shadow-md relative overflow-hidden"
+                    >
+                      {/* Subtle ambient aura */}
+                      <div
+                        className="pointer-events-none absolute -top-12 -right-12 h-36 w-36 rounded-full opacity-15 blur-2xl group-hover:opacity-30 transition-opacity"
+                        style={{ background: pollTheme.atmosphere?.previewGradient }}
+                      />
+
+                      <div className="relative space-y-4">
+                        <div className="flex items-center justify-between">
+                          <span
+                            className="font-mono text-xs font-bold px-2.5 py-0.5 rounded-md border"
+                            style={{
+                              backgroundColor: pollTheme.accentColors?.badgeBg,
+                              borderColor: pollTheme.accentColors?.badgeBorder,
+                              color: pollTheme.accentColors?.badgeText,
+                            }}
+                          >
+                            {p.code}
                           </span>
+                          <div className="flex items-center gap-2">
+                            <span
+                              className="font-mono text-[9px] uppercase px-1.5 py-0.5 rounded font-semibold border"
+                              style={{
+                                backgroundColor: pollTheme.accentColors?.badgeBg,
+                                borderColor: pollTheme.accentColors?.badgeBorder,
+                                color: pollTheme.accentColors?.badgeText,
+                              }}
+                            >
+                              {pollTheme.personalityLabel}
+                            </span>
+                            <span className="flex items-center gap-1 text-xs font-mono text-zinc-400">
+                              <Users className="h-3 w-3" />
+                              <span>{p.total_votes}</span>
+                            </span>
+                          </div>
+                        </div>
+
+                        <div>
+                          <h3 className="text-base font-bold text-white line-clamp-2">
+                            {p.title}
+                          </h3>
+                          {p.description && (
+                            <p className="text-xs text-zinc-400 line-clamp-2 mt-1 leading-relaxed">
+                              {p.description}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Themed Micro Pulse Option Bar Preview */}
+                        <div className="space-y-2 pt-1">
+                          {p.options.slice(0, 3).map((opt, i) => {
+                            const optColor = pollTheme.palette[i % pollTheme.palette.length]?.accent || '#38bdf8';
+                            return (
+                              <div key={opt.id} className="space-y-1">
+                                <div className="flex justify-between text-[11px] font-mono">
+                                  <span className="text-zinc-300 truncate max-w-[180px]">{opt.text}</span>
+                                  <span className="text-zinc-400 font-semibold">{opt.percentage.toFixed(0)}%</span>
+                                </div>
+                                <div className="h-1.5 w-full rounded-full bg-white/[0.06] overflow-hidden">
+                                  <div
+                                    className="h-full rounded-full transition-all duration-500"
+                                    style={{
+                                      width: `${opt.percentage}%`,
+                                      backgroundColor: optColor,
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
 
-                      <div>
-                        <h3 className="text-base font-bold text-white line-clamp-2">
-                          {p.title}
-                        </h3>
-                        {p.description && (
-                          <p className="text-xs text-zinc-400 line-clamp-2 mt-1 leading-relaxed">
-                            {p.description}
-                          </p>
-                        )}
-                      </div>
+                      {/* Actions */}
+                      <div className="mt-6 pt-4 border-t border-white/[0.06] flex items-center justify-between gap-2 relative">
+                        <button
+                          onClick={() => handleOpenVote(p.id)}
+                          className="flex-1 flex items-center justify-center gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.02] py-2 text-xs font-medium text-zinc-300 hover:bg-white/[0.06] transition cursor-pointer"
+                        >
+                          <Radio
+                            className="h-3.5 w-3.5"
+                            style={{ color: pollTheme.accentColors?.primary || '#a855f7' }}
+                          />
+                          <span>Vote</span>
+                        </button>
 
-                      {/* Micro Pulse Option Bar Preview */}
-                      <div className="space-y-2 pt-1">
-                        {p.options.slice(0, 3).map((opt) => (
-                          <div key={opt.id} className="space-y-1">
-                            <div className="flex justify-between text-[11px] font-mono">
-                              <span className="text-zinc-300 truncate max-w-[180px]">{opt.text}</span>
-                              <span className="text-zinc-400 font-semibold">{opt.percentage.toFixed(0)}%</span>
-                            </div>
-                            <div className="h-1 w-full rounded-full bg-white/[0.06] overflow-hidden">
-                              <div
-                                className="h-full rounded-full transition-all duration-500 bg-gradient-to-r from-violet-500 to-cyan-400"
-                                style={{ width: `${opt.percentage}%` }}
-                              />
-                            </div>
-                          </div>
-                        ))}
+                        <button
+                          onClick={() => handleOpenResults(p.id)}
+                          style={{
+                            backgroundColor: pollTheme.accentColors?.primary || '#ffffff',
+                            color: '#000000',
+                          }}
+                          className="flex-1 flex items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-bold hover:brightness-110 transition cursor-pointer shadow-sm"
+                        >
+                          <Tv className="h-3.5 w-3.5 text-black" />
+                          <span>Stage</span>
+                        </button>
+
+                        <button
+                          onClick={() => handleOpenShare(p)}
+                          className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-2 text-zinc-400 hover:text-white transition cursor-pointer"
+                          title="Share Room"
+                        >
+                          <QrCode className="h-3.5 w-3.5" />
+                        </button>
                       </div>
                     </div>
-
-                    {/* Actions */}
-                    <div className="mt-6 pt-4 border-t border-white/[0.06] flex items-center justify-between gap-2">
-                      <button
-                        onClick={() => handleOpenVote(p.id)}
-                        className="flex-1 flex items-center justify-center gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.02] py-2 text-xs font-medium text-zinc-300 hover:bg-white/[0.06] transition cursor-pointer"
-                      >
-                        <Radio className="h-3.5 w-3.5 text-violet-400" />
-                        <span>Vote</span>
-                      </button>
-
-                      <button
-                        onClick={() => handleOpenResults(p.id)}
-                        className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-white py-2 text-xs font-semibold text-black hover:bg-zinc-200 transition cursor-pointer"
-                      >
-                        <Tv className="h-3.5 w-3.5 text-black" />
-                        <span>Stage</span>
-                      </button>
-
-                      <button
-                        onClick={() => handleOpenShare(p)}
-                        className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-2 text-zinc-400 hover:text-white transition cursor-pointer"
-                        title="Share Room"
-                      >
-                        <QrCode className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -424,7 +517,7 @@ export const App: React.FC = () => {
       <footer className="border-t border-white/[0.06] py-6 text-xs text-zinc-400 bg-[#07080B]">
         <div className="mx-auto flex max-w-6xl flex-col sm:flex-row items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-2">
-            <span className="font-semibold text-zinc-200">PULSEPOLL</span>
+            <span className="font-semibold text-zinc-200">LIVEVOTA</span>
             <span className="text-zinc-400">·</span>
             <span className="text-zinc-400">Every vote creates a pulse</span>
           </div>
@@ -453,6 +546,7 @@ export const App: React.FC = () => {
         })}
         onPollCreated={handlePollCreated}
         selectedTemplate={selectedTemplate}
+        onSelectAtmosphere={handleSelectAtmosphere}
       />
 
       {selectedSharePoll && (

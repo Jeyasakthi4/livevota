@@ -185,7 +185,7 @@ export const RedisInspectorModal: React.FC<RedisInspectorModalProps> = ({ isOpen
                       </h4>
                     </div>
                     <p className="text-xs text-slate-400 mt-0.5">
-                      Database: <span className="font-mono text-slate-300 font-semibold">{mongoTelemetry?.databaseName || 'pulsepoll'}</span>
+                      Database: <span className="font-mono text-slate-300 font-semibold">{mongoTelemetry?.databaseName || 'livevota'}</span>
                       {' • '}
                       URI: <span className="font-mono text-slate-300">{mongoTelemetry?.host || 'mongodb://127.0.0.1:27017'}</span>
                     </p>
@@ -251,7 +251,7 @@ export const RedisInspectorModal: React.FC<RedisInspectorModalProps> = ({ isOpen
               <div className="rounded-xl border border-slate-800 bg-slate-900/40 p-4 space-y-3">
                 <h4 className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
                   <ShieldCheck className="h-4 w-4 text-emerald-400" />
-                  MongoDB Architectural Roles in PulsePoll
+                  MongoDB Architectural Roles in LiveVota
                 </h4>
                 <div className="grid sm:grid-cols-2 gap-3 text-xs text-slate-300">
                   <div className="p-3 rounded-lg bg-black/30 border border-slate-800/80">
@@ -421,7 +421,7 @@ export const RedisInspectorModal: React.FC<RedisInspectorModalProps> = ({ isOpen
                   Cooperative Real-Time Architecture: Hot Cache + Cold Persistence
                 </h4>
                 <p className="text-xs text-slate-300 leading-relaxed">
-                  PulsePoll separates instantaneous in-memory concurrency from long-term durability by combining Redis for atomic vote deduplication and WebSocket event distribution with MongoDB for permanent collection storage and schema indexing.
+                  LiveVota separates instantaneous in-memory concurrency from long-term durability by combining Redis for atomic vote deduplication and WebSocket event distribution with MongoDB for permanent collection storage and schema indexing.
                 </p>
               </div>
 

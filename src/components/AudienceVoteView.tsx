@@ -9,12 +9,25 @@ import {
   KeyRound,
   ArrowRight,
   Tv,
+  GraduationCap,
+  Briefcase,
+  Zap,
+  Timer,
+  Trophy,
+  Lightbulb,
+  PartyPopper,
+  BarChart2,
+  Globe,
+  Sparkles,
+  Flame,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { Poll, User } from '../types';
+import { Poll, User, EventPersonalityType } from '../types';
 import { api } from '../services/api';
 import { LiveReactionsOverlay } from './LiveReactionsOverlay';
 import { sounds } from '../utils/soundEffects';
+import { getThemeForPoll, PulseTheme } from '../utils/themeManager';
+import { ThemedEventBackground } from './ThemedEventBackground';
 
 interface AudienceVoteViewProps {
   poll: Poll;
@@ -26,6 +39,83 @@ interface AudienceVoteViewProps {
 }
 
 const OPTION_KEYS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+
+const EVENT_ICONS: Record<string, React.ElementType> = {
+  classroom: GraduationCap,
+  'team-work': Briefcase,
+  'live-event': Zap,
+  quiz: Timer,
+  competition: Trophy,
+  brainstorm: Lightbulb,
+  'party-social': PartyPopper,
+  survey: BarChart2,
+  conference: Globe,
+};
+
+const EVENT_SPECIAL_WIDGETS: Record<
+  EventPersonalityType,
+  {
+    icon: React.ElementType;
+    title: string;
+    description: string;
+    chipText: string;
+  }
+> = {
+  classroom: {
+    icon: GraduationCap,
+    title: 'ACADEMIC LECTURE HUD',
+    description: 'Lecture comprehension active · Concept check in progress',
+    chipText: 'EDUCATIONAL CALM',
+  },
+  'team-work': {
+    icon: Briefcase,
+    title: 'EXECUTIVE SPRINT RETRO',
+    description: 'Confidential engineering alignment · Razor precision',
+    chipText: 'EXECUTIVE PRECISION',
+  },
+  'live-event': {
+    icon: Zap,
+    title: 'STADIUM SOUND STAGE',
+    description: 'Live crowd momentum steering DJ lighting & audio mix',
+    chipText: '98.4 dB SURGE',
+  },
+  quiz: {
+    icon: Timer,
+    title: 'SPEED TRIVIA ARENA',
+    description: '⏱ 00:45 Countdown round active · Lock in your answer',
+    chipText: 'ROUND TIMER',
+  },
+  competition: {
+    icon: Trophy,
+    title: 'CHAMPIONSHIP PODIUM RACE',
+    description: '🏆 Realtime leaderboard battle · Audience votes shift rank',
+    chipText: 'PODIUM RACE',
+  },
+  brainstorm: {
+    icon: Lightbulb,
+    title: 'CREATIVE STUDIO HORIZON',
+    description: 'Organic concept cluster floating · Open idea exploration',
+    chipText: 'IDEA HORIZON',
+  },
+  'party-social': {
+    icon: PartyPopper,
+    title: 'CELEBRATION GALA VIBE',
+    description: '🎉 Midnight toast active · Cheers and high-energy crowd reactions',
+    chipText: 'TOAST & CHEER',
+  },
+  survey: {
+    icon: BarChart2,
+    title: 'EMPIRICAL MATRIX TELEMETRY',
+    description: 'Quantitative metric telemetry · Statistical bounds CI 95%',
+    chipText: 'CI 95% METRIC',
+  },
+  conference: {
+    icon: Globe,
+    title: 'KEYNOTE AUDITORIUM BROADCAST',
+    description: 'Main auditorium 4K interactive display synchronized',
+    chipText: '4K BROADCAST',
+  },
+};
 
 export const AudienceVoteView: React.FC<AudienceVoteViewProps> = ({
   poll,
@@ -41,6 +131,12 @@ export const AudienceVoteView: React.FC<AudienceVoteViewProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [votedOptionName, setVotedOptionName] = useState<string | null>(null);
   const [receiptHash, setReceiptHash] = useState<string | null>(null);
+
+  // Dynamically resolve the theme according to the event
+  const theme: PulseTheme = getThemeForPoll(poll);
+  const personality = (poll.personality || theme.personality) as EventPersonalityType;
+  const EventIcon = EVENT_ICONS[personality] || Sparkles;
+  const eventWidget = EVENT_SPECIAL_WIDGETS[personality];
 
   useEffect(() => {
     setHasVoted(hasVotedInitially);
@@ -111,7 +207,7 @@ export const AudienceVoteView: React.FC<AudienceVoteViewProps> = ({
         particleCount: 60,
         spread: 60,
         origin: { y: 0.6 },
-        colors: ['#06B6D4', '#8B5CF6', '#10B981'],
+        colors: theme.palette.map((p) => p.accent),
       });
 
       const opt = poll.options.find((o) => o.id === selectedOptionId);
@@ -138,13 +234,36 @@ export const AudienceVoteView: React.FC<AudienceVoteViewProps> = ({
   const isVotingDisabled = poll.is_closed || hasVoted;
 
   return (
-    <div className="mx-auto max-w-xl px-4 py-8 sm:px-6 relative space-y-6">
-      {/* Top Header Remote Actions */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="h-2 w-2 rounded-full bg-cyan-400 animate-pulse" />
-          <span className="font-mono text-xs font-bold tracking-widest text-zinc-400">
-            ROOM · {poll.code}
+    <div
+      style={theme.cssVariables as React.CSSProperties}
+      className="mx-auto max-w-xl px-4 py-8 sm:px-6 relative space-y-6 transition-colors duration-500"
+    >
+      {/* Impressive Architectural Event Background */}
+      <ThemedEventBackground personality={personality} theme={theme} variant="fullscreen" opacity={1} />
+
+      {/* Top Header Remote Actions & Event Identity */}
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Room Code Badge */}
+          <div className="flex items-center gap-1.5 font-mono text-xs font-bold tracking-widest text-zinc-300 bg-white/[0.04] border border-white/[0.08] px-3 py-1.5 rounded-lg">
+            <span
+              className="h-2 w-2 rounded-full animate-pulse"
+              style={{ backgroundColor: theme.accentColors?.primary || '#10b981' }}
+            />
+            <span>ROOM · {poll.code}</span>
+          </div>
+
+          {/* Event Personality Badge */}
+          <span
+            className="font-mono text-[10px] font-bold px-2.5 py-1 rounded-lg border flex items-center gap-1.5 shadow-sm uppercase tracking-wider"
+            style={{
+              backgroundColor: theme.accentColors?.badgeBg,
+              borderColor: theme.accentColors?.badgeBorder,
+              color: theme.accentColors?.badgeText,
+            }}
+          >
+            <EventIcon className="h-3 w-3" />
+            <span>{theme.personalityLabel}</span>
           </span>
         </div>
 
@@ -166,24 +285,81 @@ export const AudienceVoteView: React.FC<AudienceVoteViewProps> = ({
               sounds.playSelect();
               onViewResults(poll.id);
             }}
-            className="flex items-center gap-1.5 rounded-lg border border-white/[0.1] bg-white px-3 py-1.5 text-xs font-semibold text-black hover:bg-zinc-200 transition cursor-pointer"
+            style={{
+              backgroundColor: theme.accentColors?.primary || '#ffffff',
+              color: '#000000',
+            }}
+            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold hover:brightness-110 active:scale-[0.98] transition cursor-pointer shadow-sm"
             id="vote-results-btn"
           >
-            <Tv className="h-3.5 w-3.5" />
+            <Tv className="h-3.5 w-3.5 text-black" />
             <span>Live Stage</span>
           </button>
         </div>
       </div>
 
-      {/* Main Ballot Card */}
-      <div className="rounded-2xl border border-white/[0.08] bg-[#090A0F] p-6 sm:p-8 space-y-6">
-        {/* Title & Description */}
+      {/* Main Ballot Card Styled by Event Theme with Atmospheric Glassmorphism */}
+      <div
+        style={{
+          backgroundColor: 'rgba(10, 14, 22, 0.78)',
+          borderColor: theme.accentColors?.border || 'rgba(255,255,255,0.12)',
+        }}
+        className="relative rounded-2xl border p-6 sm:p-8 space-y-6 shadow-2xl backdrop-blur-xl transition-all duration-300 overflow-hidden"
+      >
+        {/* Subtle interior atmospheric glow */}
+        <div
+          className="pointer-events-none absolute -top-24 -right-24 h-64 w-64 rounded-full opacity-20 blur-3xl"
+          style={{ background: theme.atmosphere?.previewGradient }}
+        />
+
+        {/* Special Event Widget Banner */}
+        {eventWidget && (
+          <div
+            className="relative flex items-center justify-between gap-3 rounded-xl border p-3 text-xs font-mono backdrop-blur-md"
+            style={{
+              backgroundColor: theme.accentColors?.badgeBg,
+              borderColor: theme.accentColors?.badgeBorder,
+              color: theme.accentColors?.badgeText,
+            }}
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <eventWidget.icon
+                className="h-4 w-4 shrink-0"
+                style={{ color: theme.accentColors?.primary }}
+              />
+              <div className="min-w-0">
+                <div className="font-bold tracking-wide uppercase">{eventWidget.title}</div>
+                <div className="text-[11px] opacity-80 truncate">{eventWidget.description}</div>
+              </div>
+            </div>
+
+            <span
+              className="shrink-0 px-2 py-0.5 rounded text-[10px] font-bold border"
+              style={{
+                borderColor: theme.accentColors?.badgeBorder,
+                backgroundColor: 'rgba(0,0,0,0.3)',
+              }}
+            >
+              {eventWidget.chipText}
+            </span>
+          </div>
+        )}
+
+        {/* Title & Description with Event-Themed Typography */}
         <div className="space-y-2">
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white leading-snug">
+          <h1
+            className={`${
+              theme.typography?.titleClass || 'text-2xl sm:text-3xl font-extrabold tracking-tight'
+            } text-white leading-snug`}
+          >
             {poll.title}
           </h1>
           {poll.description && (
-            <p className="text-sm text-zinc-400 leading-relaxed">
+            <p
+              className={`${
+                theme.typography?.descriptionClass || 'text-sm text-zinc-400'
+              } leading-relaxed`}
+            >
               {poll.description}
             </p>
           )}
@@ -193,12 +369,20 @@ export const AudienceVoteView: React.FC<AudienceVoteViewProps> = ({
         {user && !hasVoted && !poll.is_closed && (
           <div className="flex items-center justify-between rounded-xl border border-white/[0.08] bg-white/[0.02] px-3.5 py-2 text-xs text-zinc-400 font-mono">
             <div className="flex items-center gap-2">
-              <UserCheck className="h-3.5 w-3.5 text-cyan-400" />
+              <UserCheck
+                className="h-3.5 w-3.5"
+                style={{ color: theme.accentColors?.primary || '#38bdf8' }}
+              />
               <span>
                 Voting as <strong className="text-zinc-200">{user.username}</strong>
               </span>
             </div>
-            <span className="text-[10px] text-emerald-400 font-semibold">VERIFIED</span>
+            <span
+              className="text-[10px] font-semibold"
+              style={{ color: theme.accentColors?.primary || '#34d399' }}
+            >
+              VERIFIED
+            </span>
           </div>
         )}
 
@@ -212,21 +396,37 @@ export const AudienceVoteView: React.FC<AudienceVoteViewProps> = ({
 
         {/* Post-Vote Verified Receipt */}
         {hasVoted && (
-          <div className="rounded-xl border border-emerald-500/30 bg-emerald-950/20 p-4 space-y-2 text-xs">
+          <div
+            className="rounded-xl border p-4 space-y-2 text-xs shadow-inner"
+            style={{
+              backgroundColor: theme.accentColors?.badgeBg,
+              borderColor: theme.accentColors?.badgeBorder,
+            }}
+          >
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-emerald-400 font-semibold">
+              <div
+                className="flex items-center gap-2 font-semibold"
+                style={{ color: theme.accentColors?.primary || '#34d399' }}
+              >
                 <CheckCircle2 className="h-4 w-4" />
-                <span>Pulse Recorded in Room</span>
+                <span>Pulse Recorded in Room · Event Theme Applied</span>
               </div>
               {receiptHash && (
-                <span className="font-mono text-[10px] text-emerald-300 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-500/30">
+                <span
+                  className="font-mono text-[10px] px-2 py-0.5 rounded border"
+                  style={{
+                    backgroundColor: 'rgba(0,0,0,0.4)',
+                    borderColor: theme.accentColors?.badgeBorder,
+                    color: theme.accentColors?.badgeText,
+                  }}
+                >
                   {receiptHash}
                 </span>
               )}
             </div>
             {votedOptionName && (
-              <p className="text-zinc-300">
-                You selected: <strong className="text-white font-semibold">{votedOptionName}</strong>
+              <p className="text-zinc-200">
+                You selected: <strong className="text-white font-bold">{votedOptionName}</strong>
               </p>
             )}
           </div>
@@ -239,11 +439,12 @@ export const AudienceVoteView: React.FC<AudienceVoteViewProps> = ({
           </div>
         )}
 
-        {/* Option Selection - Touch Optimized (48px+ min hit target) */}
+        {/* Option Selection Form Styled According to Event Palette */}
         <form onSubmit={handleVoteSubmit} className="space-y-3">
           {poll.options.map((opt, idx) => {
             const isSelected = selectedOptionId === opt.id;
             const letter = OPTION_KEYS[idx] || `${idx + 1}`;
+            const paletteEntry = theme.palette[idx % theme.palette.length];
 
             return (
               <button
@@ -256,39 +457,57 @@ export const AudienceVoteView: React.FC<AudienceVoteViewProps> = ({
                     setSelectedOptionId(opt.id);
                   }
                 }}
-                className={`w-full min-h-[56px] flex items-center justify-between rounded-xl border p-4 text-left transition-all cursor-pointer select-none active:scale-[0.99] ${
-                  isSelected
-                    ? 'border-violet-500/80 bg-violet-950/20 ring-1 ring-violet-500/50'
-                    : 'border-white/[0.07] bg-white/[0.02] hover:border-white/[0.14] hover:bg-white/[0.04]'
-                } ${isVotingDisabled ? 'opacity-40 cursor-not-allowed' : ''}`}
+                style={{
+                  borderColor: isSelected
+                    ? paletteEntry.accent
+                    : 'rgba(255,255,255,0.08)',
+                  backgroundColor: isSelected
+                    ? `${paletteEntry.accent}18`
+                    : 'rgba(255,255,255,0.02)',
+                  boxShadow: isSelected
+                    ? `0 0 20px ${paletteEntry.accent}30`
+                    : 'none',
+                }}
+                className={`w-full min-h-[56px] flex items-center justify-between rounded-xl border p-4 text-left transition-all duration-200 ease-out cursor-pointer select-none active:scale-[0.975] ${
+                  isVotingDisabled ? 'opacity-40 cursor-not-allowed' : 'hover:border-white/[0.25] hover:scale-[1.006]'
+                }`}
               >
                 <div className="flex items-center gap-3 min-w-0">
+                  {/* Option Letter Badge with Event Themed Color */}
                   <span
-                    className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md font-mono text-xs font-semibold transition ${
-                      isSelected
-                        ? 'bg-violet-500 text-white'
-                        : 'bg-white/[0.06] text-zinc-400 border border-white/[0.08]'
-                    }`}
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md font-mono text-xs font-bold transition shadow-sm"
+                    style={{
+                      backgroundColor: isSelected ? paletteEntry.accent : 'rgba(255,255,255,0.06)',
+                      color: isSelected ? '#000000' : '#d4d4d8',
+                      borderColor: paletteEntry.accent,
+                    }}
                   >
                     {letter}
                   </span>
-                  <span className="text-sm sm:text-base font-semibold text-zinc-100 truncate font-sans">
+                  <span
+                    className={`${
+                      theme.typography?.labelClass || 'text-sm sm:text-base font-semibold'
+                    } text-zinc-100 truncate`}
+                  >
                     {opt.text}
                   </span>
                 </div>
 
+                {/* Radio Check Ring */}
                 <div
-                  className={`h-4 w-4 shrink-0 rounded-full border transition flex items-center justify-center ${
-                    isSelected ? 'border-violet-400 bg-violet-500' : 'border-zinc-600'
-                  }`}
+                  className="h-4 w-4 shrink-0 rounded-full border transition-all flex items-center justify-center"
+                  style={{
+                    borderColor: isSelected ? paletteEntry.accent : '#52525b',
+                    backgroundColor: isSelected ? paletteEntry.accent : 'transparent',
+                  }}
                 >
-                  {isSelected && <div className="h-1.5 w-1.5 rounded-full bg-white" />}
+                  {isSelected && <div className="h-1.5 w-1.5 rounded-full bg-black" />}
                 </div>
               </button>
             );
           })}
 
-          {/* Action Button */}
+          {/* Action Button Styled with Event Theme Primary Accent */}
           <div className="pt-2">
             {!user && !hasVoted && !poll.is_closed ? (
               <button
@@ -300,7 +519,11 @@ export const AudienceVoteView: React.FC<AudienceVoteViewProps> = ({
                     notice: 'Anti-duplicate protection: votes are linked to verified accounts.',
                   })
                 }
-                className="w-full min-h-[50px] flex items-center justify-center gap-2 rounded-xl bg-white py-3.5 px-6 text-sm font-semibold text-black hover:bg-zinc-200 transition cursor-pointer shadow-sm active:scale-[0.99]"
+                style={{
+                  backgroundColor: theme.accentColors?.primary || '#ffffff',
+                  color: '#000000',
+                }}
+                className="w-full min-h-[50px] flex items-center justify-center gap-2 rounded-xl py-3.5 px-6 text-sm font-bold hover:brightness-110 transition cursor-pointer shadow-lg active:scale-[0.99]"
                 id="vote-auth-btn"
               >
                 <Lock className="h-4 w-4" />
@@ -311,23 +534,30 @@ export const AudienceVoteView: React.FC<AudienceVoteViewProps> = ({
               <button
                 type="submit"
                 disabled={isVotingDisabled || !selectedOptionId || loading}
-                className="w-full min-h-[50px] flex items-center justify-center gap-2 rounded-xl bg-white py-3.5 px-6 text-sm font-semibold text-black hover:bg-zinc-200 transition disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer shadow-sm active:scale-[0.99]"
+                style={{
+                  backgroundColor:
+                    !isVotingDisabled && selectedOptionId
+                      ? theme.accentColors?.primary || '#ffffff'
+                      : '#27272a',
+                  color: !isVotingDisabled && selectedOptionId ? '#000000' : '#71717a',
+                }}
+                className="w-full min-h-[50px] flex items-center justify-center gap-2 rounded-xl py-3.5 px-6 text-sm font-bold hover:brightness-110 hover:scale-[1.008] transition-all duration-200 ease-out disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 cursor-pointer shadow-lg active:scale-[0.975]"
                 id="vote-submit-btn"
               >
                 {loading ? (
                   <>
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-black border-t-transparent" />
-                    <span>Broadcasting...</span>
+                    <span>Broadcasting to Room...</span>
                   </>
                 ) : hasVoted ? (
                   <>
-                    <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                    <span>Pulse Verified</span>
+                    <CheckCircle2 className="h-4 w-4" />
+                    <span>Pulse Verified in Room</span>
                   </>
                 ) : (
                   <>
                     <Radio className="h-4 w-4" />
-                    <span>Transmit Pulse</span>
+                    <span>Transmit Pulse ({theme.personalityLabel})</span>
                   </>
                 )}
               </button>

@@ -56,7 +56,7 @@ export const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
     if (!dataUrl) return;
     const a = document.createElement('a');
     a.href = dataUrl;
-    a.download = `pulsepoll-qr-${Date.now()}.png`;
+    a.download = `livevota-qr-${Date.now()}.png`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

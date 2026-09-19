@@ -76,7 +76,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
             <div className="flex items-center gap-2">
               <span className="font-bold text-sm tracking-tight text-white font-sans">
-                PULSEPOLL
+                LIVEVOTA
               </span>
               <span className="text-[9px] font-mono text-zinc-400 border border-white/[0.08] px-1.5 py-0.2 rounded">
                 STAGE

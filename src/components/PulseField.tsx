@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { Option } from '../types';
 import { PulseTheme, THEME_DEFAULT_ECLIPSE } from '../utils/themeManager';
+import { ThemedEventBackground } from './ThemedEventBackground';
 
 interface PulseFieldProps {
   options: Option[];
@@ -76,8 +77,8 @@ export const PulseField: React.FC<PulseFieldProps> = ({
       style={theme.cssVariables as React.CSSProperties}
       className={`relative w-full overflow-hidden ${theme.surface?.cardRounded || 'rounded-2xl'} border ${theme.tailwindClasses.containerBorder} ${theme.tailwindClasses.gridBg} ${theme.tailwindClasses.containerGlow} p-5 sm:p-8 transition-all duration-500`}
     >
-      {/* Ambient background pattern */}
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(#1e2230_1px,transparent_1px)] [background-size:24px_24px] opacity-35" />
+      {/* Themed Event Architectural Backdrop */}
+      <ThemedEventBackground personality={theme.personality} theme={theme} variant="inset" opacity={0.35} />
 
       {/* Top subtle harmonic line connecting the nodes */}
       <div className="relative mb-6 flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.06] pb-3 text-[11px] font-mono uppercase tracking-wider text-zinc-500">
@@ -161,8 +162,8 @@ export const PulseField: React.FC<PulseFieldProps> = ({
               }}
               transition={{ duration: theme.animation.pulseFrequencySeconds, ease: 'easeOut' }}
               onClick={() => interactive && onSelectOption?.(opt.id)}
-              className={`group relative flex flex-col justify-between ${theme.surface?.cardRounded || 'rounded-xl'} border p-4 sm:p-5 transition-all duration-300 ${
-                interactive ? 'cursor-pointer select-none active:scale-[0.99]' : ''
+              className={`group relative flex flex-col justify-between ${theme.surface?.cardRounded || 'rounded-xl'} border p-4 sm:p-5 transition-all duration-300 ease-out ${
+                interactive ? 'cursor-pointer select-none active:scale-[0.975] hover:scale-[1.01]' : ''
               } ${
                 isSelected
                   ? theme.surface?.cardSelected || theme.tailwindClasses.cardSelected

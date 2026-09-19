@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   X,
   Plus,
@@ -22,12 +22,13 @@ import {
   Maximize2,
   Monitor,
 } from 'lucide-react';
-import { User, Poll, Option, EventTemplate } from '../types';
+import { User, Poll, Option, EventTemplate, EventPersonalityType } from '../types';
 import { api } from '../services/api';
 import { PulseField } from './PulseField';
 import { EVENT_CATEGORIES, EVENT_TEMPLATES } from '../data/eventTemplates';
 import { sounds } from '../utils/soundEffects';
 import { getThemeForPoll } from '../utils/themeManager';
+import { ThemedEventBackground } from './ThemedEventBackground';
 
 interface CreatePollModalProps {
   isOpen: boolean;
@@ -36,6 +37,7 @@ interface CreatePollModalProps {
   onOpenAuth: () => void;
   onPollCreated: (poll: Poll) => void;
   selectedTemplate?: EventTemplate | null;
+  onSelectAtmosphere?: (personality: EventPersonalityType) => void;
 }
 
 const CATEGORY_ICONS: Record<string, React.ElementType> = {
@@ -58,6 +60,7 @@ export const CreatePollModal: React.FC<CreatePollModalProps> = ({
   onOpenAuth,
   onPollCreated,
   selectedTemplate,
+  onSelectAtmosphere,
 }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -73,12 +76,26 @@ export const CreatePollModal: React.FC<CreatePollModalProps> = ({
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
   const [previewMode, setPreviewMode] = useState<'room' | 'stage'>('room');
 
+  // Define applyTemplate before useEffect to prevent temporal dead zone ReferenceError
+  const applyTemplate = useCallback((tmpl: EventTemplate) => {
+    sounds.playSelect();
+    setTitle(tmpl.title);
+    setDescription(tmpl.description);
+    setOptions([...tmpl.options]);
+    if (tmpl.recommendedMinutes) {
+      setExpiresInMinutes(tmpl.recommendedMinutes);
+    }
+    setSelectedTemplateId(tmpl.id);
+    onSelectAtmosphere?.(tmpl.personality);
+    setError(null);
+  }, [onSelectAtmosphere]);
+
   // Sync selectedTemplate prop if passed from dashboard
   useEffect(() => {
     if (selectedTemplate) {
       applyTemplate(selectedTemplate);
     }
-  }, [selectedTemplate]);
+  }, [selectedTemplate, applyTemplate]);
 
   // Compute live preview options for right pane
   const previewOptions: Option[] = useMemo(() => {
@@ -104,8 +121,6 @@ export const CreatePollModal: React.FC<CreatePollModalProps> = ({
     });
   }, [selectedTemplateId, title, description]);
 
-  if (!isOpen) return null;
-
   const handleAddOption = () => {
     if (options.length < 8) {
       setOptions([...options, '']);
@@ -122,18 +137,6 @@ export const CreatePollModal: React.FC<CreatePollModalProps> = ({
     const updated = [...options];
     updated[index] = val;
     setOptions(updated);
-  };
-
-  const applyTemplate = (tmpl: EventTemplate) => {
-    sounds.playSelect();
-    setTitle(tmpl.title);
-    setDescription(tmpl.description);
-    setOptions([...tmpl.options]);
-    if (tmpl.recommendedMinutes) {
-      setExpiresInMinutes(tmpl.recommendedMinutes);
-    }
-    setSelectedTemplateId(tmpl.id);
-    setError(null);
   };
 
   const handleResetForm = () => {
@@ -202,6 +205,8 @@ export const CreatePollModal: React.FC<CreatePollModalProps> = ({
 
   const ThemeIcon = CATEGORY_ICONS[previewTheme.personality] || Sparkles;
 
+  if (!isOpen) return null;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/80 p-4 backdrop-blur-md">
       <div className="relative w-full max-w-6xl rounded-2xl border border-white/[0.08] bg-[#0A0D14] shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
@@ -267,7 +272,7 @@ export const CreatePollModal: React.FC<CreatePollModalProps> = ({
           /* Focused Split-Screen Builder + Realtime Poll Preview */
           <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-white/[0.08] overflow-y-auto flex-1 min-h-0">
             {/* Left Pane: Builder Form */}
-            <form onSubmit={handleSubmit} className="p-6 sm:p-7 space-y-5 flex flex-col justify-between overflow-y-auto">
+            <form onSubmit={handleSubmit} className="p-6 sm:p-7 space-y-5 flex flex-col justify-between overflow-y-auto custom-scrollbar overscroll-contain">
               <div className="space-y-4">
                 {error && (
                   <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-xs text-red-300">
@@ -300,7 +305,7 @@ export const CreatePollModal: React.FC<CreatePollModalProps> = ({
                   </div>
 
                   {/* Personality Category Pills */}
-                  <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 scrollbar-none">
+                  <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 custom-scrollbar scroll-smooth">
                     {EVENT_CATEGORIES.map((cat) => {
                       const Icon = CATEGORY_ICONS[cat.id] || Layers;
                       const isActive = activeCategory === cat.id;
@@ -326,7 +331,7 @@ export const CreatePollModal: React.FC<CreatePollModalProps> = ({
                   </div>
 
                   {/* Templates Quick List */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pt-1 max-h-40 overflow-y-auto pr-0.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pt-1 max-h-40 overflow-y-auto pr-0.5 custom-scrollbar overscroll-contain">
                     {filteredTemplates.map((tmpl) => {
                       const isSelected = selectedTemplateId === tmpl.id;
                       return (
@@ -494,10 +499,18 @@ export const CreatePollModal: React.FC<CreatePollModalProps> = ({
             {/* Right Pane: Realtime Live Poll Preview (Dynamically themed to selected event) */}
             <div
               style={previewTheme.cssVariables as React.CSSProperties}
-              className={`relative p-6 sm:p-8 flex flex-col justify-between space-y-6 overflow-y-auto transition-all duration-500 ${
+              className={`relative p-6 sm:p-8 flex flex-col justify-between space-y-6 overflow-y-auto custom-scrollbar overscroll-contain transition-all duration-500 overflow-hidden ${
                 previewTheme.atmosphere?.previewBg || 'bg-[#08090E]'
               }`}
             >
+              {/* Architectural Event Atmosphere */}
+              <ThemedEventBackground
+                personality={previewTheme.personality}
+                theme={previewTheme}
+                variant="inset"
+                opacity={0.65}
+              />
+
               {/* Dynamic atmosphere gradient wash */}
               <div
                 className="pointer-events-none absolute inset-0 opacity-80 transition-opacity duration-700"

@@ -259,7 +259,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setError(null);
     setLoading(true);
     try {
-      const res = await api.login('alex.chen@pulsepoll.io', 'password123');
+      const res = await api.login('alex.chen@livevota.io', 'password123');
       setAuthSession(res.token, res.user);
       onAuthSuccess(res.user);
       onClose();
@@ -274,7 +274,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setError(null);
     setLoading(true);
     try {
-      const res = await api.login('jordan.lee@pulsepoll.io', 'password123');
+      const res = await api.login('jordan.lee@livevota.io', 'password123');
       setAuthSession(res.token, res.user);
       onAuthSuccess(res.user);
       onClose();
@@ -366,7 +366,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 </div>
 
                 <p className="text-xs text-slate-400">
-                  Select any Google account to authenticate seamlessly with PulsePoll.
+                  Select any Google account to authenticate seamlessly with LiveVota.
                 </p>
 
                 {/* GIS Official Google Button Container if loaded */}
@@ -586,7 +586,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     <input
                       type="email"
                       required
-                      placeholder="organizer@pulsepoll.io"
+                      placeholder="organizer@livevota.io"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="w-full rounded-xl border border-slate-700 bg-slate-950 pl-10 pr-3.5 py-2.5 text-sm text-white placeholder-slate-600 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"

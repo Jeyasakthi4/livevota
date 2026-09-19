@@ -29,6 +29,7 @@ import { PresentationModeView } from './PresentationModeView';
 import { CreatorAnalyticsModal } from './CreatorAnalyticsModal';
 import { sounds } from '../utils/soundEffects';
 import { PulseTheme, ALL_THEMES, getThemeForPoll } from '../utils/themeManager';
+import { ThemedEventBackground } from './ThemedEventBackground';
 
 interface LiveResultsViewProps {
   initialPoll: Poll;
@@ -203,7 +204,7 @@ export const LiveResultsView: React.FC<LiveResultsViewProps> = ({
     const csvContent = 'data:text/csv;charset=utf-8,' + rows.map((e) => e.join(',')).join('\n');
     const a = document.createElement('a');
     a.href = encodeURI(csvContent);
-    a.download = `pulsepoll_${poll.code}_pulses.csv`;
+    a.download = `livevota_${poll.code}_pulses.csv`;
     a.click();
     a.remove();
   };
@@ -213,10 +214,12 @@ export const LiveResultsView: React.FC<LiveResultsViewProps> = ({
       style={currentTheme.cssVariables as React.CSSProperties}
       className="relative mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8 space-y-8 transition-colors duration-500"
     >
-      {/* Ambient Atmospheric Glow for Event Personality */}
-      <div
-        className="pointer-events-none absolute -top-12 left-1/2 -translate-x-1/2 h-72 w-full max-w-4xl opacity-35 blur-3xl transition-all duration-700 -z-10"
-        style={{ background: currentTheme.atmosphere?.previewGradient || 'none' }}
+      {/* Impressive Architectural Event Background */}
+      <ThemedEventBackground
+        personality={currentTheme.personality}
+        theme={currentTheme}
+        variant="fullscreen"
+        opacity={1}
       />
       {/* Floating Reactions Canvas */}
       <LiveReactionsOverlay
@@ -442,7 +445,7 @@ export const LiveResultsView: React.FC<LiveResultsViewProps> = ({
 
       {/* Centerpiece Question & Live Telemetry Strip */}
       <div className="space-y-4">
-        {/* Personality Indicator */}
+        {/* Personality & Event Widget Indicator */}
         <div className="flex items-center gap-2 flex-wrap">
           <span
             className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-mono font-bold uppercase tracking-wider shadow-sm"
@@ -454,6 +457,19 @@ export const LiveResultsView: React.FC<LiveResultsViewProps> = ({
           >
             {currentTheme.personalityLabel}
           </span>
+          {currentTheme.visualDetails?.widgetLabel && (
+            <span
+              className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-mono font-bold uppercase tracking-wider shadow-sm"
+              style={{
+                backgroundColor: 'rgba(255,255,255,0.04)',
+                borderColor: currentTheme.accentColors?.border || 'rgba(255,255,255,0.1)',
+                color: currentTheme.accentColors?.primary || '#38bdf8',
+              }}
+            >
+              <span className="h-1.5 w-1.5 rounded-full animate-ping" style={{ backgroundColor: currentTheme.accentColors?.primary || '#38bdf8' }} />
+              <span>{currentTheme.visualDetails.widgetLabel}: {currentTheme.visualDetails.widgetText}</span>
+            </span>
+          )}
           {currentTheme.visualDetails?.personalityBadge && (
             <span className="text-[11px] font-mono text-zinc-400">
               {currentTheme.visualDetails.personalityBadge}

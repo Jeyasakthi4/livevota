@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { api } from '../services/api';
+import { sounds } from '../utils/soundEffects';
 
 export interface FloatingReaction {
   id: string;
@@ -54,6 +55,7 @@ export const LiveReactionsOverlay: React.FC<LiveReactionsOverlayProps> = ({
   };
 
   const handleSendReaction = async (emoji: string) => {
+    sounds.playReactionPop();
     triggerFloating(emoji);
     if (onReactionSent) onReactionSent(emoji);
 
@@ -118,7 +120,7 @@ export const LiveReactionsOverlay: React.FC<LiveReactionsOverlayProps> = ({
                   key={emoji}
                   type="button"
                   onClick={() => handleSendReaction(emoji)}
-                  className={`group relative flex items-center gap-1 rounded-xl px-2.5 py-1.5 text-xs font-semibold transition cursor-pointer select-none active:scale-95 ${
+                  className={`group relative flex items-center gap-1 rounded-xl px-2.5 py-1.5 text-xs font-semibold transition-all duration-150 ease-out cursor-pointer select-none active:scale-90 hover:scale-105 ${
                     isSending
                       ? 'bg-indigo-600 text-white shadow-sm'
                       : 'border border-slate-800 bg-slate-950/70 text-slate-200 hover:border-slate-700 hover:bg-slate-800'
