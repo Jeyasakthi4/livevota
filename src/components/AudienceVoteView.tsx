@@ -22,8 +22,8 @@ import {
   Flame,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { Poll, User, EventPersonalityType } from '../types';
-import { api } from '../services/api';
+import { Poll, User, EventPersonalityType, VoteEvent } from '../types';
+import { api, connectPollWebSocket } from '../services/api';
 import { LiveReactionsOverlay } from './LiveReactionsOverlay';
 import { sounds } from '../utils/soundEffects';
 import { getThemeForPoll, PulseTheme } from '../utils/themeManager';
@@ -125,16 +125,68 @@ export const AudienceVoteView: React.FC<AudienceVoteViewProps> = ({
   onShare,
   onOpenAuth,
 }) => {
+  const [currentPoll, setCurrentPoll] = useState<Poll>(poll);
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [hasVoted, setHasVoted] = useState(hasVotedInitially);
   const [error, setError] = useState<string | null>(null);
   const [votedOptionName, setVotedOptionName] = useState<string | null>(null);
   const [receiptHash, setReceiptHash] = useState<string | null>(null);
+  const [incomingReaction, setIncomingReaction] = useState<{ emoji: string; id: string } | null>(null);
+  const [wsConnected, setWsConnected] = useState(true);
+
+  // Sync poll prop changes
+  useEffect(() => {
+    setCurrentPoll(poll);
+  }, [poll]);
+
+  // Truly Real-Time WebSocket Connection: Zero-refresh vote updates & reactions
+  useEffect(() => {
+    const disconnect = connectPollWebSocket(
+      currentPoll.id,
+      (event: VoteEvent) => {
+        if (event.type === 'vote' || event.type === 'init') {
+          setCurrentPoll((prev) => {
+            const updatedOptions = prev.options.map((opt) => {
+              const match = event.options?.find((o) => o.id === opt.id);
+              if (match) {
+                return { ...opt, votes: match.votes, percentage: match.percentage };
+              }
+              return opt;
+            });
+            return {
+              ...prev,
+              total_votes: event.total_votes !== undefined ? event.total_votes : prev.total_votes,
+              options: updatedOptions,
+              is_closed: event.is_closed !== undefined ? event.is_closed : prev.is_closed,
+            };
+          });
+        } else if (event.type === 'status') {
+          setCurrentPoll((prev) => ({
+            ...prev,
+            is_closed: Boolean(event.is_closed),
+            total_votes: event.total_votes !== undefined ? event.total_votes : prev.total_votes,
+            options: event.options || prev.options,
+          }));
+        } else if (event.type === 'reaction' && event.emoji) {
+          if (event.reactions) {
+            setCurrentPoll((prev) => ({ ...prev, reactions: event.reactions }));
+          }
+          setIncomingReaction({
+            emoji: event.emoji,
+            id: `react_${Date.now()}_${Math.random()}`,
+          });
+        }
+      },
+      (connected) => setWsConnected(connected)
+    );
+
+    return () => disconnect();
+  }, [currentPoll.id]);
 
   // Dynamically resolve the theme according to the event
-  const theme: PulseTheme = getThemeForPoll(poll);
-  const personality = (poll.personality || theme.personality) as EventPersonalityType;
+  const theme: PulseTheme = getThemeForPoll(currentPoll);
+  const personality = (currentPoll.personality || theme.personality) as EventPersonalityType;
   const EventIcon = EVENT_ICONS[personality] || Sparkles;
   const eventWidget = EVENT_SPECIAL_WIDGETS[personality];
 
@@ -146,22 +198,22 @@ export const AudienceVoteView: React.FC<AudienceVoteViewProps> = ({
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) return;
-      if (hasVoted || poll.is_closed) return;
+      if (hasVoted || currentPoll.is_closed) return;
 
       const key = e.key.toUpperCase();
       const num = parseInt(key, 10);
-      if (!isNaN(num) && num >= 1 && num <= poll.options.length) {
+      if (!isNaN(num) && num >= 1 && num <= currentPoll.options.length) {
         e.preventDefault();
-        const opt = poll.options[num - 1];
+        const opt = currentPoll.options[num - 1];
         if (opt) {
           sounds.playSelect();
           setSelectedOptionId(opt.id);
         }
       }
       const letterIndex = OPTION_KEYS.indexOf(key);
-      if (letterIndex !== -1 && letterIndex < poll.options.length) {
+      if (letterIndex !== -1 && letterIndex < currentPoll.options.length) {
         e.preventDefault();
-        const opt = poll.options[letterIndex];
+        const opt = currentPoll.options[letterIndex];
         if (opt) {
           sounds.playSelect();
           setSelectedOptionId(opt.id);
@@ -171,7 +223,7 @@ export const AudienceVoteView: React.FC<AudienceVoteViewProps> = ({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [poll.options, hasVoted, poll.is_closed]);
+  }, [currentPoll.options, hasVoted, currentPoll.is_closed]);
 
   const handleVoteSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -191,7 +243,7 @@ export const AudienceVoteView: React.FC<AudienceVoteViewProps> = ({
       return;
     }
 
-    if (poll.is_closed) {
+    if (currentPoll.is_closed) {
       setError('This poll room is closed.');
       return;
     }
@@ -200,7 +252,7 @@ export const AudienceVoteView: React.FC<AudienceVoteViewProps> = ({
     setLoading(true);
 
     try {
-      await api.submitVote(poll.id, selectedOptionId, user.username);
+      await api.submitVote(currentPoll.id, selectedOptionId, user.username);
       sounds.playVoteSuccess();
 
       confetti({
@@ -210,7 +262,7 @@ export const AudienceVoteView: React.FC<AudienceVoteViewProps> = ({
         colors: theme.palette.map((p) => p.accent),
       });
 
-      const opt = poll.options.find((o) => o.id === selectedOptionId);
+      const opt = currentPoll.options.find((o) => o.id === selectedOptionId);
       setVotedOptionName(opt ? opt.text : 'Selected Option');
       setReceiptHash(`PULSE-${Math.random().toString(36).substring(2, 8).toUpperCase()}`);
       setHasVoted(true);
@@ -231,7 +283,7 @@ export const AudienceVoteView: React.FC<AudienceVoteViewProps> = ({
     }
   };
 
-  const isVotingDisabled = poll.is_closed || hasVoted;
+  const isVotingDisabled = currentPoll.is_closed || hasVoted;
 
   return (
     <div
@@ -244,13 +296,13 @@ export const AudienceVoteView: React.FC<AudienceVoteViewProps> = ({
       {/* Top Header Remote Actions & Event Identity */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2 flex-wrap">
-          {/* Room Code Badge */}
-          <div className="flex items-center gap-1.5 font-mono text-xs font-bold tracking-widest text-zinc-300 bg-white/[0.04] border border-white/[0.08] px-3 py-1.5 rounded-lg">
+          {/* Room Code Badge with Live Realtime Status */}
+          <div className="flex items-center gap-2 font-mono text-xs font-bold tracking-widest text-zinc-300 bg-white/[0.04] border border-white/[0.08] px-3 py-1.5 rounded-lg">
             <span
-              className="h-2 w-2 rounded-full animate-pulse"
-              style={{ backgroundColor: theme.accentColors?.primary || '#10b981' }}
+              className={`h-2 w-2 rounded-full ${wsConnected ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`}
             />
-            <span>ROOM · {poll.code}</span>
+            <span>ROOM · {currentPoll.code}</span>
+            <span className="text-[10px] text-zinc-500 font-normal">({currentPoll.total_votes} {currentPoll.total_votes === 1 ? 'vote' : 'votes'})</span>
           </div>
 
           {/* Event Personality Badge */}
@@ -283,7 +335,7 @@ export const AudienceVoteView: React.FC<AudienceVoteViewProps> = ({
           <button
             onClick={() => {
               sounds.playSelect();
-              onViewResults(poll.id);
+              onViewResults(currentPoll.id);
             }}
             style={{
               backgroundColor: theme.accentColors?.primary || '#ffffff',
@@ -352,21 +404,21 @@ export const AudienceVoteView: React.FC<AudienceVoteViewProps> = ({
               theme.typography?.titleClass || 'text-2xl sm:text-3xl font-extrabold tracking-tight'
             } text-white leading-snug`}
           >
-            {poll.title}
+            {currentPoll.title}
           </h1>
-          {poll.description && (
+          {currentPoll.description && (
             <p
               className={`${
                 theme.typography?.descriptionClass || 'text-sm text-zinc-400'
               } leading-relaxed`}
             >
-              {poll.description}
+              {currentPoll.description}
             </p>
           )}
         </div>
 
         {/* User Status Strip */}
-        {user && !hasVoted && !poll.is_closed && (
+        {user && !hasVoted && !currentPoll.is_closed && (
           <div className="flex items-center justify-between rounded-xl border border-white/[0.08] bg-white/[0.02] px-3.5 py-2 text-xs text-zinc-400 font-mono">
             <div className="flex items-center gap-2">
               <UserCheck
@@ -387,14 +439,14 @@ export const AudienceVoteView: React.FC<AudienceVoteViewProps> = ({
         )}
 
         {/* Closed Poll Alert */}
-        {poll.is_closed && (
+        {currentPoll.is_closed && (
           <div className="flex items-center gap-2.5 rounded-xl border border-amber-500/20 bg-amber-500/10 p-3.5 text-xs text-amber-300">
             <AlertCircle className="h-4 w-4 shrink-0 text-amber-400" />
             <span>This poll has concluded. Check the Live Stage to view final results.</span>
           </div>
         )}
 
-        {/* Post-Vote Verified Receipt */}
+        {/* Post-Vote Verified Receipt & Live Real-Time Results Notification */}
         {hasVoted && (
           <div
             className="rounded-xl border p-4 space-y-2 text-xs shadow-inner"
@@ -409,7 +461,7 @@ export const AudienceVoteView: React.FC<AudienceVoteViewProps> = ({
                 style={{ color: theme.accentColors?.primary || '#34d399' }}
               >
                 <CheckCircle2 className="h-4 w-4" />
-                <span>Pulse Recorded in Room · Event Theme Applied</span>
+                <span>Pulse Recorded · Live Zero-Refresh Results</span>
               </div>
               {receiptHash && (
                 <span
@@ -429,6 +481,9 @@ export const AudienceVoteView: React.FC<AudienceVoteViewProps> = ({
                 You selected: <strong className="text-white font-bold">{votedOptionName}</strong>
               </p>
             )}
+            <p className="text-[11px] text-zinc-400">
+              Option bars below update dynamically in real time without refreshing as attendees vote.
+            </p>
           </div>
         )}
 
@@ -439,12 +494,13 @@ export const AudienceVoteView: React.FC<AudienceVoteViewProps> = ({
           </div>
         )}
 
-        {/* Option Selection Form Styled According to Event Palette */}
+        {/* Option Selection Form / Live Real-Time Tally */}
         <form onSubmit={handleVoteSubmit} className="space-y-3">
-          {poll.options.map((opt, idx) => {
+          {currentPoll.options.map((opt, idx) => {
             const isSelected = selectedOptionId === opt.id;
             const letter = OPTION_KEYS[idx] || `${idx + 1}`;
             const paletteEntry = theme.palette[idx % theme.palette.length];
+            const pct = typeof opt.percentage === 'number' ? opt.percentage : 0;
 
             return (
               <button
@@ -468,11 +524,23 @@ export const AudienceVoteView: React.FC<AudienceVoteViewProps> = ({
                     ? `0 0 20px ${paletteEntry.accent}30`
                     : 'none',
                 }}
-                className={`w-full min-h-[56px] flex items-center justify-between rounded-xl border p-4 text-left transition-all duration-200 ease-out cursor-pointer select-none active:scale-[0.975] ${
-                  isVotingDisabled ? 'opacity-40 cursor-not-allowed' : 'hover:border-white/[0.25] hover:scale-[1.006]'
-                }`}
+                className={`w-full min-h-[56px] relative flex items-center justify-between rounded-xl border p-4 text-left transition-all duration-200 ease-out cursor-pointer select-none overflow-hidden ${
+                  isVotingDisabled && !hasVoted ? 'opacity-40 cursor-not-allowed' : ''
+                } ${!hasVoted ? 'active:scale-[0.975] hover:border-white/[0.25] hover:scale-[1.006]' : ''}`}
               >
-                <div className="flex items-center gap-3 min-w-0">
+                {/* Truly Real-Time Dynamic Progress Fill when voted */}
+                {hasVoted && (
+                  <div
+                    className="absolute inset-y-0 left-0 transition-all duration-500 ease-out pointer-events-none"
+                    style={{
+                      width: `${pct}%`,
+                      backgroundColor: paletteEntry.accent,
+                      opacity: 0.16,
+                    }}
+                  />
+                )}
+
+                <div className="flex items-center gap-3 min-w-0 z-10 relative">
                   {/* Option Letter Badge with Event Themed Color */}
                   <span
                     className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md font-mono text-xs font-bold transition shadow-sm"
@@ -493,15 +561,35 @@ export const AudienceVoteView: React.FC<AudienceVoteViewProps> = ({
                   </span>
                 </div>
 
-                {/* Radio Check Ring */}
-                <div
-                  className="h-4 w-4 shrink-0 rounded-full border transition-all flex items-center justify-center"
-                  style={{
-                    borderColor: isSelected ? paletteEntry.accent : '#52525b',
-                    backgroundColor: isSelected ? paletteEntry.accent : 'transparent',
-                  }}
-                >
-                  {isSelected && <div className="h-1.5 w-1.5 rounded-full bg-black" />}
+                {/* Right Side: Radio Check Ring OR Live Dynamic Percent Bar */}
+                <div className="z-10 relative shrink-0">
+                  {hasVoted ? (
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-xs text-zinc-400">
+                        {opt.votes} {opt.votes === 1 ? 'vote' : 'votes'}
+                      </span>
+                      <span
+                        className="font-mono text-xs font-bold px-2 py-0.5 rounded border"
+                        style={{
+                          backgroundColor: `${paletteEntry.accent}20`,
+                          borderColor: `${paletteEntry.accent}50`,
+                          color: paletteEntry.accent,
+                        }}
+                      >
+                        {pct.toFixed(1)}%
+                      </span>
+                    </div>
+                  ) : (
+                    <div
+                      className="h-4 w-4 shrink-0 rounded-full border transition-all flex items-center justify-center"
+                      style={{
+                        borderColor: isSelected ? paletteEntry.accent : '#52525b',
+                        backgroundColor: isSelected ? paletteEntry.accent : 'transparent',
+                      }}
+                    >
+                      {isSelected && <div className="h-1.5 w-1.5 rounded-full bg-black" />}
+                    </div>
+                  )}
                 </div>
               </button>
             );
@@ -509,7 +597,7 @@ export const AudienceVoteView: React.FC<AudienceVoteViewProps> = ({
 
           {/* Action Button Styled with Event Theme Primary Accent */}
           <div className="pt-2">
-            {!user && !hasVoted && !poll.is_closed ? (
+            {!user && !hasVoted && !currentPoll.is_closed ? (
               <button
                 type="button"
                 onClick={() =>
@@ -552,7 +640,7 @@ export const AudienceVoteView: React.FC<AudienceVoteViewProps> = ({
                 ) : hasVoted ? (
                   <>
                     <CheckCircle2 className="h-4 w-4" />
-                    <span>Pulse Verified in Room</span>
+                    <span>Pulse Transmitted · Live Zero-Refresh Active</span>
                   </>
                 ) : (
                   <>
@@ -569,14 +657,17 @@ export const AudienceVoteView: React.FC<AudienceVoteViewProps> = ({
         <div className="pt-4 border-t border-white/[0.06]">
           <div className="flex items-center justify-between mb-3 text-xs font-mono text-zinc-400">
             <span>Send Stage Reaction</span>
-            <span className="text-[10px]">Realtime broadcast</span>
+            <span className="text-[10px] flex items-center gap-1.5 text-emerald-400">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              Realtime WebSocket Broadcast
+            </span>
           </div>
 
           <LiveReactionsOverlay
-            pollId={poll.id}
-            reactions={poll.reactions || {}}
+            pollId={currentPoll.id}
+            reactions={currentPoll.reactions || {}}
             reducedMotion={false}
-            incomingReaction={null}
+            incomingReaction={incomingReaction}
             showBar={true}
             variant="bar-only"
           />

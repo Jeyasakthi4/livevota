@@ -131,7 +131,32 @@ Each event template binds an **atmospheric personality**, driving visual geometr
   * **Redis (In-Memory)**: Handles hot writes using atomic `HINCRBY` operations, active connection presence, and high-throughput Redis Pub/Sub channels (`channel:poll:*`).
   * **MongoDB (Persistent Documents)**: Captures structured poll schema, question options, user authentication, and historical session logs via asynchronous write-behind updates.
 
-### 2. Resilient Zero-Configuration In-Memory Fallback
+### 2. Strict Separation of Concerns & Modular Architecture
+* **Frontend Scope (`/src/`)**: Pure UI presentation, audio synth management, dynamic theme resolution, and client-side WebSocket consumers (`/src/components/`, `/src/services/`, `/src/utils/`).
+* **Backend Scope (`/server/`)**: Decoupled, dedicated modules handling distinct operational responsibilities:
+  * `/server/validation.ts`: Input sanitization, length bounds, regex enforcement, and security checking.
+  * `/server/routes.ts`: REST route handlers and HTTP endpoint controllers.
+  * `/server/redis.ts`: Redis Pub/Sub bus, atomic counters (`HINCRBY`), and multi-instance cache.
+  * `/server/websocket.ts`: WebSocket client connection registry, heartbeat pings, and room broadcast fanout.
+  * `/server/db.ts`: MongoDB driver initialization, reconnection loop, and document CRUD.
+  * `/server/auth.ts`: Password hashing with SHA-256 salts and JWT token issuance/verification.
+  * `/server/analytics.ts`: Rolling velocity windows (Votes/Min), activity timelines, and time-series buckets.
+
+### 3. Defensive Backend Validation
+* **Mandate**: Never trust input straight from the client; check and sanitize server-side before touching databases or cache.
+* **Implementation**:
+  * Poll creation enforces title length (5–200 chars), sanitizes HTML tags, validates 2–10 unique options, and bounds expiration limits.
+  * Vote submissions verify option existence against the database, prevent duplicate participation per verified account, and record atomic ballots.
+  * Reaction submissions enforce strict emoji allowlists (`🔥`, `❤️`, `👀`, `🤔`, `💡`).
+
+### 4. Truly Real-Time Zero-Refresh Architecture
+* **Rule**: If a user has to refresh the page to see a new vote, it doesn't count as real-time.
+* **Mechanism**:
+  * Every vote and reaction triggers a Redis Pub/Sub event and WebSocket broadcast (<50ms latency).
+  * Audience vote screens, presenter stage screens, and live results dashboards update dynamically in real time without refreshing.
+  * Post-vote screens display live percentage bars that dynamically animate as other participants submit ballots.
+
+### 5. Resilient Zero-Configuration In-Memory Fallback
 * **Decision**: While production workloads connect to real Redis clusters (`REDIS_URL`) and MongoDB replica sets (`MONGODB_URI`), the application includes a **transparent in-memory fallback engine** (`ioredis-mock` and embedded document memory store).
 * **Impact**: Developers can clone, run `npm run dev`, and immediately experience full real-time voting, Pub/Sub broadcasting, and live analytics **without requiring local Docker containers or external cloud databases**. If external credentials are provided, it automatically switches to live clusters.
 
