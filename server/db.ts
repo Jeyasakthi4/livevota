@@ -103,18 +103,20 @@ export function logMongoOp(op: string, collection: string, details?: string, dur
 }
 
 function getMongoUri(): string {
-  return process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://127.0.0.1:27017';
+  return (process.env.MONGODB_URI || process.env.MONGO_URI || '').trim();
 }
 
 const DB_NAME = process.env.MONGODB_DB_NAME || 'pulsepoll';
 
 // Check if URI contains unconfigured placeholder brackets like <db_username> or <db_password>
 function hasPlaceholderCredentials(uri: string): boolean {
+  if (!uri) return false;
   return /<[^>]+>/.test(uri) || uri.includes('<db_username>') || uri.includes('<db_password>') || uri.includes('<username>') || uri.includes('<password>');
 }
 
 // Mask URI for public telemetry (hide password and clean format)
 function getMaskedUri(uri: string): string {
+  if (!uri) return 'in-memory (standby)';
   try {
     const parsed = new URL(uri.replace(/^mongodb(\+srv)?:\/\//, 'http://'));
     const protocol = uri.startsWith('mongodb+srv://') ? 'mongodb+srv://' : 'mongodb://';
@@ -136,6 +138,19 @@ export async function initMongoDB(): Promise<boolean> {
 
   const currentUri = getMongoUri();
 
+  if (!currentUri) {
+    isConnected = false;
+    isConnecting = false;
+    isPlaceholderMode = false;
+    lastErrorMsg = undefined;
+    if (!warnedPlaceholderOnce) {
+      console.log(`[MongoDB] Notice: MONGODB_URI is not set. Operating with synchronized in-memory data store.`);
+      logMongoOp('STANDBY', 'system', 'In-memory synchronized data store active.');
+      warnedPlaceholderOnce = true;
+    }
+    return false;
+  }
+
   // Guard against unconfigured placeholder credentials (e.g. <db_username>:<db_password>)
   // Prevents invalid TLS handshake attempts that produce OpenSSL "SSL alert number 80"
   if (hasPlaceholderCredentials(currentUri)) {
@@ -144,7 +159,7 @@ export async function initMongoDB(): Promise<boolean> {
     isPlaceholderMode = true;
     lastErrorMsg = 'MONGODB_URI contains unconfigured template placeholders (<db_username> / <db_password>). To persist directly to your MongoDB Atlas cluster, replace them with your database username and password in Settings.';
     if (!warnedPlaceholderOnce) {
-      console.log(`[MongoDB] Notice: MONGODB_URI contains unreplaced template placeholders (<db_username> / <db_password>). PulsePoll is operating with the synchronized memory data store.`);
+      console.log(`[MongoDB] Notice: MONGODB_URI contains unreplaced template placeholders (<db_username> / <db_password>). LiveVota is operating with the synchronized memory data store.`);
       logMongoOp('STANDBY', 'system', 'Template placeholders detected. In-memory data store active.');
       warnedPlaceholderOnce = true;
     }
@@ -223,6 +238,7 @@ export function startMongoAutoReconnect() {
   if (reconnectTimer) return;
   reconnectTimer = setInterval(async () => {
     const currentUri = getMongoUri();
+    if (!currentUri) return;
 
     // If URI has placeholder credentials, only retry if the URI value changed in environment
     if (hasPlaceholderCredentials(currentUri)) {
