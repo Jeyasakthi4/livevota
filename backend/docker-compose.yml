@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  # 1. Realtime In-Memory Data Store & Pub/Sub Engine
+  redis:
+    image: redis:7.0-alpine
+    container_name: pulsepoll-redis
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # 2. Document Database for Persistent Records
+  mongodb:
+    image: mongo:6.0
+    container_name: pulsepoll-mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: pulsepoll_db
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # 3. High-Concurrency Go Gin Backend
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pulsepoll-backend
+    ports:
+      - "8080:8080"
+    environment:
+      PORT_BACKEND: 8080
+      GIN_MODE: release
+      REDIS_ADDR: redis:6379
+      MONGO_URI: mongodb://mongodb:27017
+      MONGO_DB_NAME: pulsepoll_db
+      JWT_SECRET: pulsepoll-production-secret-internship-2026
+    depends_on:
+      redis:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+
+volumes:
+  redis-data:
+  mongo-data:
