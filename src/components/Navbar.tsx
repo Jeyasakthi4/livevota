@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { User } from '../types';
 import { sounds } from '../utils/soundEffects';
+import { LiveVotaLogo } from './LiveVotaLogo';
 
 interface NavbarProps {
   user: User | null;
@@ -87,16 +88,12 @@ export const Navbar: React.FC<NavbarProps> = ({
             className="flex items-center gap-2.5 text-left transition hover:opacity-80 cursor-pointer"
             id="nav-brand-button"
           >
-            <div className="relative flex h-7 w-7 items-center justify-center rounded-lg bg-zinc-900 border border-white/[0.12]">
-              <Radio className="h-3.5 w-3.5 text-cyan-400" />
-              <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan-400 opacity-60"></span>
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-cyan-400"></span>
-              </span>
-            </div>
+            <LiveVotaLogo size={28} withPulse={true} className="transition-transform group-hover:scale-105 shadow-md" />
             <div className="flex items-center gap-2">
-              <span className="font-bold text-sm tracking-tight text-white font-sans">
-                LIVEVOTA
+              <span className="font-extrabold text-sm tracking-tight text-white font-sans flex items-center">
+                <span>LIVEV</span>
+                <span className="text-[#FBB03B]">O</span>
+                <span>TA</span>
               </span>
               <span className="text-[9px] font-mono text-zinc-400 border border-white/[0.08] px-1.5 py-0.2 rounded">
                 STAGE

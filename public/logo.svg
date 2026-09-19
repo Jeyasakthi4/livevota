@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <clipPath id="squircle-clip">
+      <rect width="512" height="512" rx="112" ry="112" />
+    </clipPath>
+  </defs>
+
+  <!-- Squircle Background -->
+  <rect width="512" height="512" rx="112" ry="112" fill="#1555EC" />
+
+  <!-- The Stylized V-Person Icon -->
+  <g id="v-person-glyph">
+    <!-- Golden Amber Head Dot -->
+    <circle cx="260" cy="172" r="38" fill="#FBB03B" />
+
+    <!-- Left White Wing / Arm -->
+    <line x1="168" y1="180" x2="256" y2="300" stroke="#FFFFFF" stroke-width="64" stroke-linecap="round" />
+
+    <!-- Right Azure / Sky-Blue Wing / Arm -->
+    <line x1="256" y1="300" x2="352" y2="158" stroke="#38B6FF" stroke-width="64" stroke-linecap="round" />
+  </g>
+
+  <!-- LiveVota Wordmark with Signature Amber 'o' -->
+  <text
+    x="256"
+    y="418"
+    text-anchor="middle"
+    font-family="-apple-system, BlinkMacSystemFont, 'Outfit', 'Plus Jakarta Sans', 'Segoe UI', Roboto, sans-serif"
+    font-size="76"
+    font-weight="800"
+    letter-spacing="-1px"
+    fill="#FFFFFF"
+  >livev<tspan fill="#FBB03B">o</tspan>ta</text>
+</svg>

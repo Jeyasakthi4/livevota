@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="100%" height="100%">
+  <!-- Royal Blue Squircle -->
+  <rect width="128" height="128" rx="28" ry="28" fill="#1555EC" />
+
+  <!-- V-Person Glyph (Enlarged and optically balanced for small favicon rendering) -->
+  <circle cx="64" cy="38" r="11" fill="#FBB03B" />
+  <line x1="38" y1="44" x2="63" y2="82" stroke="#FFFFFF" stroke-width="17" stroke-linecap="round" />
+  <line x1="63" y1="82" x2="90" y2="38" stroke="#38B6FF" stroke-width="17" stroke-linecap="round" />
+
+  <!-- Small stylized indicator dot or micro wordmark accent -->
+  <circle cx="64" cy="106" r="3.5" fill="#FBB03B" />
+</svg>

@@ -18,6 +18,7 @@ import { QRCodeDisplay } from './QRCodeDisplay';
 import { sounds } from '../utils/soundEffects';
 import { PulseTheme, getThemeForPoll } from '../utils/themeManager';
 import { ThemedEventBackground } from './ThemedEventBackground';
+import { LiveVotaLogo } from './LiveVotaLogo';
 
 interface PresentationModeViewProps {
   initialPoll: Poll;
@@ -176,6 +177,15 @@ export const PresentationModeView: React.FC<PresentationModeViewProps> = ({
       {/* Top Bar: Presenter HUD with Theme Identity */}
       <div className="relative flex items-center justify-between border-b border-white/[0.06] bg-black/40 px-6 sm:px-12 py-4 backdrop-blur-md z-10">
         <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
+          <div className="flex items-center gap-2 pr-2 border-r border-white/[0.08]">
+            <LiveVotaLogo size={24} />
+            <span className="font-extrabold text-xs tracking-tight text-white font-sans hidden sm:inline">
+              <span>LIVEV</span>
+              <span className="text-[#FBB03B]">O</span>
+              <span>TA</span>
+            </span>
+          </div>
+
           <div className="flex items-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-1 text-xs font-mono">
             <span className="text-zinc-500">ROOM</span>
             <span className="font-bold text-white tracking-wider">{poll.code}</span>

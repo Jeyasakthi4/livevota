@@ -26,6 +26,7 @@ import { getThemeForPoll } from './utils/themeManager';
 import { ThemedEventBackground } from './components/ThemedEventBackground';
 import { smoothScrollTo } from './utils/scrollUtils';
 import { ScrollToTopButton } from './components/ScrollToTopButton';
+import { LiveVotaLogo } from './components/LiveVotaLogo';
 
 export const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(getStoredUser());
@@ -530,9 +531,14 @@ export const App: React.FC = () => {
       {/* Global Studio Minimal Footer */}
       <footer className="border-t border-white/[0.06] py-6 text-xs text-zinc-400 bg-[#07080B]">
         <div className="mx-auto flex max-w-6xl flex-col sm:flex-row items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-2">
-            <span className="font-semibold text-zinc-200">LIVEVOTA</span>
-            <span className="text-zinc-400">·</span>
+          <div className="flex items-center gap-2.5">
+            <LiveVotaLogo size={20} />
+            <span className="font-extrabold text-xs tracking-tight text-white font-sans flex items-center">
+              <span>LIVEV</span>
+              <span className="text-[#FBB03B]">O</span>
+              <span>TA</span>
+            </span>
+            <span className="text-zinc-600">·</span>
             <span className="text-zinc-400">Every vote creates a pulse</span>
           </div>
           <div className="flex items-center gap-4 text-[11px] font-mono text-zinc-400">
