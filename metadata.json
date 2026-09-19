@@ -1,6 +1,6 @@
 {
   "name": "LiveVota",
   "description": "A modern real-time polling platform with live audience voting, instant updates, and real-time analytics powered by MongoDB and Redis.",
-  "requestFramePermissions": [],
+  "requestFramePermissions": ["camera"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
