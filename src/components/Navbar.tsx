@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Radio,
   Plus,
@@ -39,6 +39,26 @@ export const Navbar: React.FC<NavbarProps> = ({
 }) => {
   const [joinInput, setJoinInput] = useState('');
   const [soundActive, setSoundActive] = useState<boolean>(sounds.enabled);
+  const [scrollProgress, setScrollProgress] = useState<number>(0);
+
+  useEffect(() => {
+    let ticking = false;
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const scrollY = window.scrollY;
+          const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+          const progress = maxScroll > 0 ? Math.min(100, Math.max(0, (scrollY / maxScroll) * 100)) : 0;
+          setScrollProgress(progress);
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const handleSoundToggle = () => {
     const newState = sounds.toggle();
@@ -210,6 +230,14 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
           )}
         </div>
+      </div>
+
+      {/* Dynamic Smooth Scroll Progress Indicator */}
+      <div className="h-[2px] w-full bg-white/[0.03] overflow-hidden">
+        <div
+          className="h-full bg-gradient-to-r from-cyan-400 via-violet-400 to-amber-400 transition-all duration-100 ease-out"
+          style={{ width: `${scrollProgress}%` }}
+        />
       </div>
     </header>
   );

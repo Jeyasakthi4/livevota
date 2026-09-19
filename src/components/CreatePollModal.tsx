@@ -270,9 +270,9 @@ export const CreatePollModal: React.FC<CreatePollModalProps> = ({
           </div>
         ) : (
           /* Focused Split-Screen Builder + Realtime Poll Preview */
-          <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-white/[0.08] overflow-y-auto flex-1 min-h-0">
+          <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-white/[0.08] overflow-y-auto custom-scrollbar scroll-smooth overscroll-contain flex-1 min-h-0">
             {/* Left Pane: Builder Form */}
-            <form onSubmit={handleSubmit} className="p-6 sm:p-7 space-y-5 flex flex-col justify-between overflow-y-auto custom-scrollbar overscroll-contain">
+            <form onSubmit={handleSubmit} className="p-6 sm:p-7 space-y-5 flex flex-col justify-between overflow-y-auto custom-scrollbar scroll-smooth overscroll-contain">
               <div className="space-y-4">
                 {error && (
                   <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-xs text-red-300">
@@ -402,7 +402,7 @@ export const CreatePollModal: React.FC<CreatePollModalProps> = ({
                     Options ({options.length}/8)
                   </label>
 
-                  <div className="space-y-2 max-h-48 overflow-y-auto pr-0.5">
+                  <div className="space-y-2 max-h-48 overflow-y-auto custom-scrollbar scroll-smooth overscroll-contain pr-1">
                     {options.map((opt, idx) => (
                       <div key={idx} className="flex items-center gap-2">
                         <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md font-mono text-xs font-semibold text-zinc-400 bg-white/[0.04] border border-white/[0.08]">

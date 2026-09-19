@@ -7,6 +7,7 @@ import {
   AlertCircle,
   CheckCircle2,
   Tv,
+  ArrowUp,
 } from 'lucide-react';
 import { Poll, User, EventTemplate, EventPersonalityType } from './types';
 import { api, getStoredUser, clearAuthSession } from './services/api';
@@ -23,6 +24,8 @@ import { QRScannerModal } from './components/QRScannerModal';
 import { sounds } from './utils/soundEffects';
 import { getThemeForPoll } from './utils/themeManager';
 import { ThemedEventBackground } from './components/ThemedEventBackground';
+import { smoothScrollTo } from './utils/scrollUtils';
+import { ScrollToTopButton } from './components/ScrollToTopButton';
 
 export const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(getStoredUser());
@@ -51,6 +54,8 @@ export const App: React.FC = () => {
       // ignore
     }
   };
+
+  const [templateCategoryFilter, setTemplateCategoryFilter] = useState<string>('all');
 
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
 
@@ -224,17 +229,19 @@ export const App: React.FC = () => {
     setIsCreateOpen(true);
   };
 
-  const handleExploreTemplates = () => {
+  const handleExploreTemplates = (category?: string) => {
     sounds.playSelect();
+    if (category) {
+      setTemplateCategoryFilter(category);
+    }
     if (currentView !== 'dashboard') {
       setCurrentView('dashboard');
+      setTimeout(() => {
+        smoothScrollTo('event-templates-section', { offset: 72, behavior: 'smooth' });
+      }, 50);
+    } else {
+      smoothScrollTo('event-templates-section', { offset: 72, behavior: 'smooth' });
     }
-    setTimeout(() => {
-      const el = document.getElementById('event-templates-section');
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    }, 50);
   };
 
   const handleOpenAuth = (context?: { title?: string; subtitle?: string; notice?: string }) => {
@@ -302,7 +309,12 @@ export const App: React.FC = () => {
         onJoinCode={(code) => handleJoinCode(code, 'vote')}
         onExplore={() => {
           sounds.playSelect();
-          setCurrentView('dashboard');
+          if (currentView === 'dashboard') {
+            smoothScrollTo(0, { offset: 0 });
+          } else {
+            setCurrentView('dashboard');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }
         }}
         onOpenScanner={() => {
           sounds.playSelect();
@@ -360,8 +372,8 @@ export const App: React.FC = () => {
                 setIsScannerOpen(true);
               }}
               onExplorePolls={() => {
-                const el = document.getElementById('active-rooms-section');
-                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                sounds.playSelect();
+                smoothScrollTo('active-rooms-section', { offset: 72, behavior: 'smooth' });
               }}
               onExploreTemplates={handleExploreTemplates}
             />
@@ -371,6 +383,8 @@ export const App: React.FC = () => {
               onSelectTemplate={handleSelectTemplate}
               activeAtmosphere={activeAtmosphere}
               onSelectAtmosphere={handleSelectAtmosphere}
+              categoryFilter={templateCategoryFilter}
+              onCategoryFilterChange={setTemplateCategoryFilter}
             />
 
             {/* Active Live Rooms Section */}
@@ -527,6 +541,19 @@ export const App: React.FC = () => {
             <span>Redis 7 (Pub/Sub)</span>
             <span>•</span>
             <span>WebSockets</span>
+            <span>•</span>
+            <button
+              type="button"
+              onClick={() => {
+                sounds.playSelect();
+                smoothScrollTo(0, { offset: 0, behavior: 'smooth' });
+              }}
+              className="flex items-center gap-1 text-zinc-300 hover:text-cyan-400 transition cursor-pointer font-sans"
+              title="Smooth scroll to top of page"
+            >
+              <span>Back to top</span>
+              <ArrowUp className="h-3 w-3" />
+            </button>
           </div>
         </div>
       </footer>
@@ -581,6 +608,9 @@ export const App: React.FC = () => {
         onClose={() => setIsScannerOpen(false)}
         onScanSuccess={(code) => handleJoinCode(code, 'vote')}
       />
+
+      {/* Floating Smooth Scroll To Top Trigger */}
+      <ScrollToTopButton />
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Sparkles,
   Layers,
@@ -11,16 +11,21 @@ import {
   GraduationCap,
   Briefcase,
   Zap,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { EventTemplate, EventPersonalityType } from '../types';
 import { EVENT_CATEGORIES, EVENT_TEMPLATES } from '../data/eventTemplates';
 import { sounds } from '../utils/soundEffects';
 import { EventTemplateCard } from './EventTemplateCard';
+import { smoothScrollHorizontal, smoothCenterChild } from '../utils/scrollUtils';
 
 interface EventTemplatesSectionProps {
   onSelectTemplate: (template: EventTemplate) => void;
   activeAtmosphere?: EventPersonalityType;
   onSelectAtmosphere?: (personality: EventPersonalityType) => void;
+  categoryFilter?: string;
+  onCategoryFilterChange?: (catId: string) => void;
 }
 
 const CATEGORY_ICONS: Record<string, React.ElementType> = {
@@ -40,8 +45,25 @@ export const EventTemplatesSection: React.FC<EventTemplatesSectionProps> = ({
   onSelectTemplate,
   activeAtmosphere = 'quiz',
   onSelectAtmosphere,
+  categoryFilter,
+  onCategoryFilterChange,
 }) => {
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [internalCategory, setInternalCategory] = useState<string>('all');
+  const categoriesContainerRef = useRef<HTMLDivElement>(null);
+
+  const selectedCategory = categoryFilter !== undefined ? categoryFilter : internalCategory;
+
+  const handleSelectCategory = (catId: string, element?: HTMLElement) => {
+    sounds.playSelect();
+    if (onCategoryFilterChange) {
+      onCategoryFilterChange(catId);
+    } else {
+      setInternalCategory(catId);
+    }
+    if (element && categoriesContainerRef.current) {
+      smoothCenterChild(categoriesContainerRef.current, element);
+    }
+  };
 
   const filteredTemplates =
     selectedCategory === 'all'
@@ -100,38 +122,65 @@ export const EventTemplatesSection: React.FC<EventTemplatesSectionProps> = ({
         </div>
       </div>
 
-      {/* Atmosphere Switcher & Filter Pills */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 custom-scrollbar scroll-smooth">
-        {EVENT_CATEGORIES.map((cat) => {
-          const Icon = CATEGORY_ICONS[cat.id] || Layers;
-          const isFilterActive = selectedCategory === cat.id;
-          const isAtmosphereActive = cat.personality && activeAtmosphere === cat.personality;
+      {/* Atmosphere Switcher & Filter Pills with Smooth Scroll Navigation Chevrons */}
+      <div className="relative flex items-center group/carousel">
+        {/* Left Scroll Chevrons */}
+        <button
+          type="button"
+          onClick={() => smoothScrollHorizontal(categoriesContainerRef.current, -220)}
+          className="hidden sm:flex absolute -left-3 z-10 h-8 w-8 items-center justify-center rounded-full border border-white/[0.12] bg-[#0E1118]/90 text-zinc-300 shadow-lg backdrop-blur-md opacity-0 group-hover/carousel:opacity-100 hover:text-white hover:border-white/[0.25] transition cursor-pointer"
+          title="Smooth scroll left"
+          aria-label="Scroll categories left"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </button>
 
-          return (
-            <button
-              key={cat.id}
-              onClick={() => {
-                sounds.playSelect();
-                setSelectedCategory(cat.id);
-                if (cat.personality) {
-                  onSelectAtmosphere?.(cat.personality);
-                }
-              }}
-              className={`flex items-center gap-2 shrink-0 rounded-xl px-3.5 py-2 text-xs font-medium transition-all duration-200 ease-out cursor-pointer select-none active:scale-[0.96] ${
-                isFilterActive
-                  ? 'bg-white text-black font-semibold shadow-sm'
-                  : 'border border-white/[0.08] bg-white/[0.02] text-zinc-300 hover:border-white/[0.16] hover:bg-white/[0.06] hover:text-white'
-              }`}
-              id={`template-filter-${cat.id}`}
-            >
-              <Icon className={`h-3.5 w-3.5 ${isFilterActive ? 'text-black' : 'text-zinc-400'}`} />
-              <span>{cat.label}</span>
-              {isAtmosphereActive && (
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-              )}
-            </button>
-          );
-        })}
+        {/* Categories Bar */}
+        <div
+          ref={categoriesContainerRef}
+          className="flex items-center gap-2 overflow-x-auto pb-1.5 custom-scrollbar scroll-smooth w-full px-0.5"
+        >
+          {EVENT_CATEGORIES.map((cat) => {
+            const Icon = CATEGORY_ICONS[cat.id] || Layers;
+            const isFilterActive = selectedCategory === cat.id;
+            const isAtmosphereActive = cat.personality && activeAtmosphere === cat.personality;
+
+            return (
+              <button
+                key={cat.id}
+                onClick={(e) => {
+                  handleSelectCategory(cat.id, e.currentTarget);
+                  if (cat.personality) {
+                    onSelectAtmosphere?.(cat.personality);
+                  }
+                }}
+                className={`flex items-center gap-2 shrink-0 rounded-xl px-3.5 py-2 text-xs font-medium transition-all duration-200 ease-out cursor-pointer select-none active:scale-[0.96] ${
+                  isFilterActive
+                    ? 'bg-white text-black font-semibold shadow-sm'
+                    : 'border border-white/[0.08] bg-white/[0.02] text-zinc-300 hover:border-white/[0.16] hover:bg-white/[0.06] hover:text-white'
+                }`}
+                id={`template-filter-${cat.id}`}
+              >
+                <Icon className={`h-3.5 w-3.5 ${isFilterActive ? 'text-black' : 'text-zinc-400'}`} />
+                <span>{cat.label}</span>
+                {isAtmosphereActive && (
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Right Scroll Chevrons */}
+        <button
+          type="button"
+          onClick={() => smoothScrollHorizontal(categoriesContainerRef.current, 220)}
+          className="hidden sm:flex absolute -right-3 z-10 h-8 w-8 items-center justify-center rounded-full border border-white/[0.12] bg-[#0E1118]/90 text-zinc-300 shadow-lg backdrop-blur-md opacity-0 group-hover/carousel:opacity-100 hover:text-white hover:border-white/[0.25] transition cursor-pointer"
+          title="Smooth scroll right"
+          aria-label="Scroll categories right"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </button>
       </div>
 
       {/* Redesigned Atmospheric Template Cards Grid */}

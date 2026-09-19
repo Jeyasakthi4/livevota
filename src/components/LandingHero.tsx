@@ -8,7 +8,7 @@ interface LandingHeroProps {
   onJoinCode: (code: string) => void;
   onOpenScanner: () => void;
   onExplorePolls: () => void;
-  onExploreTemplates?: () => void;
+  onExploreTemplates?: (category?: string) => void;
 }
 
 export const LandingHero: React.FC<LandingHeroProps> = ({
@@ -109,30 +109,30 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
             </span>
             <button
               type="button"
-              onClick={onExploreTemplates}
-              className="inline-flex items-center gap-1 rounded-full border border-white/[0.08] bg-white/[0.02] px-2.5 py-0.5 text-[11px] text-zinc-300 hover:border-cyan-500/40 hover:text-white transition cursor-pointer"
+              onClick={() => onExploreTemplates('conference')}
+              className="inline-flex items-center gap-1 rounded-full border border-white/[0.08] bg-white/[0.02] px-2.5 py-0.5 text-[11px] text-zinc-300 hover:border-cyan-500/40 hover:text-white transition cursor-pointer active:scale-95"
             >
               <Sparkles className="h-2.5 w-2.5 text-cyan-400" />
               <span>Conferences</span>
             </button>
             <button
               type="button"
-              onClick={onExploreTemplates}
-              className="inline-flex items-center gap-1 rounded-full border border-white/[0.08] bg-white/[0.02] px-2.5 py-0.5 text-[11px] text-zinc-300 hover:border-cyan-500/40 hover:text-white transition cursor-pointer"
+              onClick={() => onExploreTemplates('team-work')}
+              className="inline-flex items-center gap-1 rounded-full border border-white/[0.08] bg-white/[0.02] px-2.5 py-0.5 text-[11px] text-zinc-300 hover:border-cyan-500/40 hover:text-white transition cursor-pointer active:scale-95"
             >
               <span>All-Hands</span>
             </button>
             <button
               type="button"
-              onClick={onExploreTemplates}
-              className="inline-flex items-center gap-1 rounded-full border border-white/[0.08] bg-white/[0.02] px-2.5 py-0.5 text-[11px] text-zinc-300 hover:border-cyan-500/40 hover:text-white transition cursor-pointer"
+              onClick={() => onExploreTemplates('brainstorm')}
+              className="inline-flex items-center gap-1 rounded-full border border-white/[0.08] bg-white/[0.02] px-2.5 py-0.5 text-[11px] text-zinc-300 hover:border-cyan-500/40 hover:text-white transition cursor-pointer active:scale-95"
             >
               <span>Tech Talks</span>
             </button>
             <button
               type="button"
-              onClick={onExploreTemplates}
-              className="inline-flex items-center gap-1 rounded-full border border-white/[0.08] bg-white/[0.02] px-2.5 py-0.5 text-[11px] text-zinc-300 hover:border-cyan-500/40 hover:text-white transition cursor-pointer"
+              onClick={() => onExploreTemplates('classroom')}
+              className="inline-flex items-center gap-1 rounded-full border border-white/[0.08] bg-white/[0.02] px-2.5 py-0.5 text-[11px] text-zinc-300 hover:border-cyan-500/40 hover:text-white transition cursor-pointer active:scale-95"
             >
               <span>Workshops</span>
             </button>
